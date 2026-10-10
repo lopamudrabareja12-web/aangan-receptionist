@@ -1,5 +1,7 @@
 # Components Map: Aangan Studio phone receptionist
 
+![Swimlane Components Map](Components-Map-Diagram.png)
+
 MESA Case 03. Phone calls only (WhatsApp and the web form are out of scope; the same pipeline would extend to them by
 swapping the Trigger and Input columns). Status: **built and tested**, **planned**, or **depends on Vaani (to confirm)**.
 The same content is the home page of the deployed site (source: `src/lib/components-map.ts`).
