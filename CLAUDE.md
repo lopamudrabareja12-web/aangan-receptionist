@@ -139,6 +139,10 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Before any REAL caller data goes through, switch the project to the paid tier (link a billing account in AI Studio) and say so in the write-up.
 - Free tier has low rate limits and may be slower; the replay is throttled and retries on rate-limit errors.
 
+## Gemini results (10 Oct 2026)
+- Model: `gemini-3.5-flash-lite` (the cheapest Flash model offered to this account; gemini-2.5-flash-lite is closed to new users). Listed price about $0.30 in / $2.50 out per 1M tokens (third-party sources; confirm on Google's page). Measured: about 570 input + 350 output tokens per call, roughly Rs 0.09 per call at those rates; Rs 0 on the free tier.
+- Real extraction replay on the 20 historical calls: first run 19/20 (all 10 held-out calls passed; T07 missed because the model did not turn "before Diwali, about three weeks away" into a deadline). After a generic prompt fix about relative dates, 20/20 (10/10 prompt-example calls, 10/10 held-out calls). Caveats: n = 20, single run, model output can vary between runs; the prompt fix was made while looking at T07 (an example call), the held-out calls were not used for tuning.
+
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ExtractionError, GeminiExtractor, buildPrompt } from "@/lib/pipeline/extractor";
+import { ExtractionError, GeminiExtractor, buildPrompt, withRetry } from "@/lib/pipeline/extractor";
 import { GOLDEN } from "@/replay/golden";
 import { GoldenExtractor } from "@/replay/golden";
 
@@ -44,5 +44,25 @@ describe("GeminiExtractor (fake model)", () => {
       g.current = id;
       await expect(g.extract()).resolves.toBeTruthy();
     }
+  });
+});
+
+describe("withRetry (free-tier rate limits)", () => {
+  it("retries a 429, waiting as long as the API's hint says", async () => {
+    const sleeps: number[] = [];
+    let n = 0;
+    const out = await withRetry(async () => { if (n++ === 0) throw new Error('{"error":{"code":429,"status":"RESOURCE_EXHAUSTED","message":"Please retry in 12.5s"}}'); return "ok"; }, { sleep: async (ms) => void sleeps.push(ms) });
+    expect(out).toBe("ok");
+    expect(sleeps).toEqual([13000]);
+  });
+  it("backs off exponentially without a hint, and gives up after the retry limit", async () => {
+    const sleeps: number[] = [];
+    await expect(withRetry(async () => { throw new Error("503 UNAVAILABLE"); }, { retries: 3, sleep: async (ms) => void sleeps.push(ms) })).rejects.toThrow("503");
+    expect(sleeps).toEqual([5000, 10000, 20000]);
+  });
+  it("does not retry a real error such as a bad key", async () => {
+    let n = 0;
+    await expect(withRetry(async () => { n++; throw new Error("403 PERMISSION_DENIED"); }, { sleep: async () => {} })).rejects.toThrow("403");
+    expect(n).toBe(1);
   });
 });
