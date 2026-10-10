@@ -1,6 +1,6 @@
 # MESA Case 03 — Aangan Studio: Unanswered Enquiries (phone only)
 
-Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: BUILDING. Phase 1 (foundation) and Phase 2A (HubSpot foundation) done; Phase 2B (pipeline) next.
+Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: BUILDING. Phase 1, 2A (HubSpot foundation) and 2B (pipeline + Replay Lab) built; real-portal HubSpot smoke test and Phase 3 (notify + claim) next.
 Update the "Decisions" section below as choices are made. Never put API keys in this file.
 
 ## The case in brief
@@ -118,6 +118,15 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Custom deal properties kept to 6 (free plan allows ~10 in total; confirm in Usage & Limits). VIP uses the standard hs_priority field.
 - Reports cannot be created by the HubSpot API: Nikhil's reports/dashboard are built by hand in the HubSpot UI (a click-by-click guide will be written in Phase 4).
 - HubSpot has no atomic "first claim wins": Phase 3 uses a short-lived claim lock in Supabase, then writes the owner to HubSpot. The lock is coordination only, not a second copy of ownership.
+
+## Pipeline decisions made while building Phase 2B (Lopa to confirm)
+- Rubric thresholds live in src/lib/pipeline/rubric.ts (DEFAULT_RUBRIC): clearly-too-low volunteered budget = under Rs 3 lakh (any scope with execution; qualified.md's own example is Rs 1-1.5 lakh for a flat) ; finish deadline under 6 weeks = Deferred (revisit on the date the caller offered, else +8 weeks); 6-8 weeks = forwarded with "timeline_tight"; commercial under 500 sq ft = forwarded with a flag (T18); over 3,000 = flagged. A possession date is not a deadline (T15).
+- Prompt-example vs held-out split: examples T01,T02,T03,T06,T07,T09,T10,T12,T19,T20; held out T04,T05,T08,T11,T13,T14,T15,T16,T17,T18 (src/replay/split.ts).
+- Privacy: phone numbers, emails and the caller's OWN name are removed before Gemini. Names of other people (a referrer, a designer) are not, because the referral source is a field we need. Lopa to decide if that is acceptable.
+- The handoff note is a deterministic template (identifiers merged after the AI step), not AI-drafted: more reliable and keeps identifiers out of Gemini.
+- Dedupe: a dropped call's HubSpot write is held 10 minutes; a redial from the same number within that window cancels it (T17).
+- Missed calls (T08): the voice agent should answer all calls, so these are rare; a transcript with under 15 caller words is treated as incomplete and gets a callback task, with no AI cost.
+- Vaani webhook payload and signature scheme are ASSUMED (fixtures/vaani/FAKE-sample-call.json, src/lib/vaani/*). Only those files change when a real sample is available.
 
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.

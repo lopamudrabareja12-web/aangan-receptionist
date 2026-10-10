@@ -114,4 +114,20 @@ describe("schema", () => {
       db.exec("update designers set hubspot_owner_id = '111' where email = 'designer-b@example.invalid'"),
     ).rejects.toThrow();
   });
+
+  it("migration 0003 adds the extraction audit columns, the cancelled outbox status and call errors", async () => {
+    const cols = async (t: string) => (await db.query<{ column_name: string }>("select column_name from information_schema.columns where table_name = $1", [t])).rows.map((x) => x.column_name);
+    expect(await cols("leads")).toEqual(expect.arrayContaining(["extraction", "missing_fields", "summary", "price_asked", "reason_code", "rubric_version", "superseded_by_call_id"]));
+    expect(await cols("calls")).toContain("error");
+    expect(await enumValues("outbox_status")).toEqual(["pending", "done", "dead", "cancelled"]);
+    await db.exec("update hubspot_outbox set status = 'cancelled'");
+  });
+
+  it("a superseded lead can point at the call that replaced it", async () => {
+    await db.exec("insert into calls (vaani_call_id) values ('call-2')");
+    const c = await db.query<{ id: string }>("select id from calls where vaani_call_id = 'call-2'");
+    await db.query("update leads set superseded_by_call_id = $1", [c.rows[0].id]);
+    const r = await db.query<{ superseded_by_call_id: string }>("select superseded_by_call_id from leads");
+    expect(r.rows[0].superseded_by_call_id).toBe(c.rows[0].id);
+  });
 });

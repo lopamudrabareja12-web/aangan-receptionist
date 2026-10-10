@@ -69,11 +69,41 @@ npm run hubspot:setup -- --apply --adopt-default   # free plan: reuse the EMPTY 
 
 The setup is idempotent, never deletes anything, and refuses to rewrite a pipeline that already has deals.
 
+## The post-call pipeline (Phase 2B)
+
+`POST /api/webhooks/vaani` verifies the signature, then for each call: stores it (idempotent on the call id), removes
+caller identifiers, asks Gemini to fill a structured record, applies Nikhil's rubric **in plain code**
+(`src/lib/pipeline/rubric.ts`, unit-tested), and queues the HubSpot write (contact, deal, note, tasks) in an outbox with
+retries so a HubSpot outage never loses a call.
+
+Outcomes: qualified, qualified with flags, declined (with reason code, kept for review), deferred (with revisit date),
+escalation (existing-client complaint or lost follow-up), incomplete (missed or dropped call).
+
+**Assumptions to replace:** Vaani's real payload and signature format have not been seen. The adapter
+(`src/lib/vaani/adapter.ts`) and signature check (`src/lib/vaani/signature.ts`) are written against an invented sample in
+`fixtures/vaani/FAKE-sample-call.json`.
+
+**Privacy limit:** phone numbers, emails and the caller's own name are removed before Gemini. Other people's names
+(a referrer, a designer) are kept, because the referral source is a field we need.
+
+### Replay Lab
+
+Runs the 20 historical phone enquiries through the real pipeline with no phone and a **mock** HubSpot, and compares each
+with the intended outcome. Calls are split into 10 prompt examples and 10 held-out calls.
+
+```bash
+npm run replay                         # offline, hand-labelled extractions: tests the rules and wiring
+npm run replay -- --extractor=gemini   # BILLED: runs the real model (needs GEMINI_API_KEY and GEMINI_MODEL in .env.local)
+```
+
+The offline run does **not** measure Gemini's accuracy (the labels were written by hand from the same transcripts).
+Only `--extractor=gemini` does. A page for the Replay Lab arrives with the console in Phase 4.
+
 ## Build phases
 
 1. Foundation: scaffold, schema, seed, env template (done)
 2. A. HubSpot foundation: slim schema, HubSpot client, setup script, deal mapping (done; real-portal smoke test pending)
-   B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (mock HubSpot)
+   B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (built; Gemini and Supabase untested live)
 3. Notify and claim: email, claim lock, owner written to HubSpot, timeout auto-assign
 4. Thin console + manual HubSpot report guide
 5. Voice agent pack for Vaani
