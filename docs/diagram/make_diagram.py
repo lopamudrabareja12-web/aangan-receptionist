@@ -35,22 +35,23 @@ def box_xy(row, col, sub=None):
     top = ry + (32 if sub == "top" else 200 if sub == "bottom" else (rh - BH) / 2)
     return cx(col) - BW / 2, top
 
-BOXES = [  # n, row, col, sub, type, title(optional), lines, planned
+BOXES = [  # n, row, col, sub, type, title(optional), lines, planned(dashed)
     (1, "caller", 0, None, "human", None, ["Calls the studio number,", "any hour, day or night", "(1 in 3 enquiries come", "after hours)"], False),
-    (2, "vaani", 0, None, "ai", None, ["Answers EVERY call,", "English / Hindi; says it is", "an AI and may record"], False),
-    (3, "vaani", 1, None, "ai", None, ["Call ends: sends a signed", "webhook with transcript,", "duration and summary"], False),
-    (4, "app", 1, "top", "code", None, ["Webhook arrives; signature", "is verified; the call is", "stored ONCE (retry-safe)"], False),
-    (5, "app", 2, "top", "code", None, ["Loads the rules: services,", "Nikhil's 5-point rubric,", "ONE price reply, NO prices"], False),
+    (2, "vaani", 0, None, "ai", "VOICE PACK · PLANNED", ["Answers EVERY call, English", "and Hindi; says it is an AI", "and may record the call"], True),
+    (3, "vaani", 1, None, "ai", "TO CONFIRM (TEST CALL)", ["Call ends: sends a webhook", "with transcript, duration", "and summary"], True),
+    (4, "app", 1, "top", "code", None, ["Receives the transcript,", "duration and summary", "(5-second reply: planned)"], False),
+    (5, "app", 2, "bottom", "code", None, ["Loads the rules: services,", "Nikhil's 5-point rubric,", "ONE price reply, NO prices"], False),
     (6, "db", 2, None, "data", None, ["Earlier calls from same", "number (10-min dedupe),", "cost rates, settings"], False),
-    (7, "app", 3, "top", "code", None, ["Strips phone, email and the", "caller's own name BEFORE", "anything goes to AI"], False),
-    (8, "gemini", 4, None, "ai", "GEMINI 3.5 FLASH-LITE", ["Reads cleaned transcript →", "structured fields: area,", "scope, timeline, who decides"], False),
-    (9, "app", 3, "bottom", "code", "RULES IN CODE, NOT AI", ["qualified · flagged · declined", "deferred · escalation ·", "incomplete (unit-tested)"], False),
-    (10, "db", 3, None, "data", None, ["Saves call, fields, decision,", "cost and full audit trail", "(raw transcripts stay here)"], False),
-    (11, "app", 5, "bottom", "code", None, ["Queues the CRM write with", "retries: a HubSpot outage", "never loses a call"], False),
-    (12, "crm", 5, None, "data", None, ["Contact + deal in 'Aangan", "Enquiries', handoff note,", "tasks, estimated value"], False),
-    (13, "design", 5, None, "gate", "HUMAN GATE · PLANNED", ["Email with claim link: first", "designer to claim owns it;", "auto-assign after 15 min"], True),
-    (14, "nikhil", 5, None, "human", None, ["Works in HubSpot: every lead,", "escalations, and declines", "kept for review"], False),
-    (15, "caller", 5, None, "human", "LIVE, DURING THE CALL", ["Answered at once. Price asked?", "One warm reason, no number,", "free consultation booked"], False),
+    (7, "app", 3, "top", "code", None, ["Verifies the signature,", "stores the call ONCE,", "checks for a redial"], False),
+    (8, "app", 3, "bottom", "code", None, ["Strips phone, email and the", "caller's own name BEFORE", "anything goes to AI"], False),
+    (9, "gemini", 4, None, "ai", "GEMINI 3.5 FLASH-LITE", ["Reads cleaned transcript →", "structured fields: area,", "scope, timeline, who decides"], False),
+    (10, "app", 4, "top", "code", "RULES IN CODE, NOT AI", ["qualified · flagged · declined", "deferred · escalation ·", "incomplete (unit-tested)"], False),
+    (11, "app", 5, "top", "code", None, ["Saves the result and queues", "the CRM write: a HubSpot", "outage never loses a call"], False),
+    (12, "db", 5, None, "data", None, ["Stores call, fields, decision,", "cost, audit trail and the", "CRM retry queue (outbox)"], False),
+    (13, "crm", 5, None, "data", None, ["Contact + deal in 'Aangan", "Enquiries', handoff note,", "tasks, estimated value"], False),
+    (14, "design", 5, None, "gate", "HUMAN GATE · PLANNED", ["Claim-link email; first to", "claim owns it and confirms", "the visit (after hours: 10am)"], True),
+    (15, "nikhil", 5, None, "human", None, ["Works in HubSpot: every lead,", "escalations first, declines", "kept for review"], False),
+    (16, "caller", 5, None, "human", "LIVE CALL · PLANNED", ["Answered at once. Price asked?", "One warm reason, no number,", "free consultation requested"], True),
 ]
 POS = {}
 for n, row, col, sub, *_ in BOXES:
@@ -62,20 +63,23 @@ def T(n): x, y = POS[n]; return x + BW / 2, y
 def B(n): x, y = POS[n]; return x + BW / 2, y + BH
 
 def Ra(n, dy): x, y = POS[n]; return x + BW, y + BH / 2 + dy
-ARROWS = [  # points, label, position along path, style
+def La(n, dy): x, y = POS[n]; return x, y + BH / 2 + dy
+GAP = ROW_Y["app"][0] + 180  # channel between the top and bottom boxes of the app lane
+ARROWS = [  # points, label, position along path, optional label dx
     ([B(1), T(2)], "dials", 0.5),
     ([R(2), L(3)], "", 0.5),
     ([B(3), T(4)], "webhook", 0.5),
-    ([R(4), L(5)], "", 0.5),
-    ([R(5), L(7)], "", 0.5),
-    ([R(6), (L(9)[0] - 22, R(6)[1]), (L(9)[0] - 22, L(9)[1]), L(9)], "dedupe · rates", 0.35),
-    ([R(7), (cx(4), R(7)[1]), T(8)], "cleaned text", 0.62),
-    ([L(8), (Ra(9, 24)[0] + 34, L(8)[1]), (Ra(9, 24)[0] + 34, Ra(9, 24)[1]), Ra(9, 24)], "fields", 0.62, -4),
-    ([B(9), T(10)], "saved + audit", 0.5),
-    ([Ra(9, -24), (L(11)[0], Ra(9, -24)[1])], "the decision", 0.8),
-    ([B(11), T(12)], "retry-safe sync", 0.5),
-    ([B(12), T(13)], "deal opens", 0.5),
-    ([L(12), (L(12)[0] - 30, L(12)[1]), (L(12)[0] - 30, L(14)[1]), L(14)], "reports · escalations", 0.5, -118),
+    ([Ra(4, -24), La(7, -24)], "the payload", 0.5),
+    ([R(6), (L(7)[0] - 24, R(6)[1]), (L(7)[0] - 24, La(7, 24)[1]), La(7, 24)], "history", 0.3),
+    ([T(5), (T(5)[0], GAP), (cx(4), GAP), B(10)], "rules loaded", 0.78),
+    ([B(7), T(8)], "", 0.5),
+    ([R(8), (cx(4), R(8)[1]), T(9)], "cleaned text", 0.7),
+    ([R(9), (Ra(9, 0)[0] + 34, R(9)[1]), (Ra(9, 0)[0] + 34, Ra(10, 24)[1]), Ra(10, 24)], "fields", 0.5),
+    ([Ra(10, -24), La(11, -24)], "", 0.5),
+    ([B(11), T(12)], "saved + queued", 0.5),
+    ([B(12), T(13)], "retry-safe sync", 0.5),
+    ([B(13), T(14)], "deal opens", 0.5),
+    ([L(13), (L(13)[0] - 30, L(13)[1]), (L(13)[0] - 30, L(15)[1]), L(15)], "reports · escalations", 0.5, -118),
 ]
 
 def label_at(points, t):
@@ -142,7 +146,7 @@ for n, row, col, sub, typ, title, lines, planned in BOXES:
 # guardrail + legend
 gy = BODY_END + 28
 add(f'<rect x="40" y="{gy}" width="{W-80}" height="86" rx="22" fill="#14161a"/>')
-add(f'<text x="{W/2}" y="{gy+53}" text-anchor="middle" font-size="25" fill="#ffffff"><tspan fill="#f2c230" font-weight="700">THE CUT · CHECKS 06 + 09 GUARDRAIL</tspan> · The system never quotes a price. Code decides who qualifies; Gemini only reads the transcript. Complaints go straight to Nikhil.</text>')
+add(f'<text x="{W/2}" y="{gy+53}" text-anchor="middle" font-size="24" fill="#ffffff"><tspan fill="#f2c230" font-weight="700">THE CUT · CHECKS 06, 07, 09 GUARDRAIL</tspan> · No price is ever quoted. Code decides who qualifies; designers own design and price; Gemini only reads. Complaints go straight to Nikhil.</text>')
 ly = gy + 130
 items = [("human", "Human action", False), ("code", "App logic (code, not AI)", False), ("ai", "AI (Vaani, Gemini)", False), ("data", "Data (Supabase, HubSpot)", False), ("gate", "Human gate", False), ("gate", "Planned (dashed)", True)]
 x = 150
@@ -152,7 +156,7 @@ for typ, name, dashed in items:
     add(f'<rect x="{x}" y="{ly}" width="56" height="34" rx="8" fill="{fill}" stroke="{stroke}" stroke-width="3"{d}/>')
     add(f'<text x="{x+72}" y="{ly+25}" font-size="20" fill="#2b3345">{esc(name)}</text>')
     x += 72 + len(name) * 11.5 + 70
-add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: boxes 3 to 12, 14, 15 (the live phone line also needs a Vaani number) · Planned: 13 (designer email and claim) and a live Vaani number</text>')
+add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 15 (Nikhil\'s HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 16 (Vaani voice pack and a live number) and 14 (designer email and claim)</text>')
 add("</svg>")
 svg = "\n".join(out)
 open("components-map-diagram.svg", "w").write(svg)
