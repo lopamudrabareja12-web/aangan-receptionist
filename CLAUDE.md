@@ -1,6 +1,6 @@
 # MESA Case 03 — Aangan Studio: Unanswered Enquiries (phone only)
 
-Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: PLANNING (Components Map + Nine Checks drafted in chat; build not started).
+Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: BUILDING. Phase 1 (foundation) and Phase 2A (HubSpot foundation) done; Phase 2B (pipeline) next.
 Update the "Decisions" section below as choices are made. Never put API keys in this file.
 
 ## The case in brief
@@ -99,8 +99,28 @@ Status pipeline (adopted): New (qualified) -> Claimed -> Designer called back ->
 - Who answers: the AI picks up every call, with a human route for complaints (existing-client complaints escalate to Nikhil/senior).
 - Auto-decline: only on hard fails (outside Pune/PCMC, out-of-scope project types, advice-only, structural-only). Everything else is forwarded to a designer with a flag. Every decline is logged with its transcript for Nikhil to review.
 
+## HubSpot (REQUIRED) - added 10 Oct 2026, supersedes earlier "skip HubSpot" notes
+Context from Lopa: the founder already uses HubSpot and does NOT want many dashboards, so HubSpot is his primary workspace and everything must be connected to it. Our own dashboard is for designers and the front desk/receptionist (operational use); the founder has access but should not need it day to day.
+Design principle: ONE SOURCE OF TRUTH PER FACT. No two-way syncing of the same state.
+- HubSpot owns: contacts (callers), deals (leads) and their pipeline stage, deal owner (designer), tasks (callbacks, visit follow-ups, revisit dates), notes (handoff note, flags, referral source, transcript summary/link), and the founder's reports/dashboard.
+- Our app (Supabase + Next.js) owns: raw calls and full transcripts, webhook idempotency, extraction audit, rubric decisions, costs, Replay Lab + historical seed data, sync log, and a thin operational console (claim link/page, leads view that READS stage/owner live from HubSpot, declined review queue, replay lab, cost detail).
+Mapping: caller -> Contact (match/dedupe on phone). Lead -> Deal in an "Aangan Enquiries" pipeline with stages: New (qualified), Claimed, Designer called back, Site visit approved, Site visit scheduled, Site visit done, Quotation pending, Quotation sent, Closed won, Closed lost. Deferred / Declined (review) / Escalation / Incomplete call must also be visible in HubSpot (extra stages or a second pipeline, depending on plan limits). Designer -> HubSpot owner. Claim or auto-assign -> sets the deal owner via API. Handoff note -> a note on the deal plus key fields as properties. Revisit dates and callbacks -> HubSpot tasks. Per-call cost and cost per qualified lead -> pushed into HubSpot so the founder sees cost and value together (verify custom-property limits on the free plan; fall back to notes if needed and tell Lopa).
+Integration rules: private-app access token in .env.local (HUBSPOT_ACCESS_TOKEN); idempotent upserts (store hubspot contact/deal ids); retry with backoff and respect rate limits; a failure queue so a HubSpot outage never loses a call; a resync button; sync log table. Historical/replay data is tagged and kept out of the live pipeline unless Lopa confirms. Check HubSpot's CURRENT API docs and the account's plan limits before building; do not assume.
+
+## Rule conflict flagged (decided in the build prompt)
+Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.md) says a clearly-too-low VOLUNTEERED budget is not forwarded (T10). Build prompt follows Nikhil's rubric for that one case: log to the Declined review queue, never forward. T18 (180 sq ft pod): forward with flag even though the human desk declined. Lopa to confirm.
+
+## HubSpot decisions (confirmed by Lopa, 10 Oct 2026)
+- Designers as users: use ~3 test HubSpot users for the demo; the write-up must say a real rollout needs paid seats. Use a custom "designer name" property ONLY if the account truly blocks extra users (it weakens "one place").
+- Side lanes (Deferred, Declined review, Escalation, Incomplete call) are extra stages in the SAME pipeline ("Aangan Enquiries"). Free plan allows one pipeline, so setup may adopt the EMPTY default pipeline (--adopt-default). Side lanes use 1% probability so HubSpot does not treat them as closed-lost.
+- Deal amount: the Rs 11 lakh average, ONLY for qualified leads, labelled an ESTIMATE in the deal description; the designer replaces it with the real quote.
+- Replay data stays OUT of HubSpot. Replay Lab runs against a mock HubSpot.
+- Custom deal properties kept to 6 (free plan allows ~10 in total; confirm in Usage & Limits). VIP uses the standard hs_priority field.
+- Reports cannot be created by the HubSpot API: Nikhil's reports/dashboard are built by hand in the HubSpot UI (a click-by-click guide will be written in Phase 4).
+- HubSpot has no atomic "first claim wins": Phase 3 uses a short-lived claim lock in Supabase, then writes the owner to HubSpot. The lock is coordination only, not a second copy of ownership.
+
 ## Still open
-- HubSpot: Lopa was told "we are supposed to use HubSpot for something". HubSpot appears nowhere in the problem statement, lecture decks, or source files read so far. Source unknown (professor/friend/Vaani?). Options: (A) HubSpot as CRM of record, (B) Supabase+dashboard primary with a one-way sync of leads to HubSpot contacts/deals, (C) skip. Do not build until Lopa confirms where the requirement comes from.
+- HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.
 - After-hours leads: queue designer alerts until working hours; agent tells caller when to expect a callback.
 - Confirm voice platform (VaaniYantra vs other) and where the phone number comes from; Marathi unsupported/unknown.

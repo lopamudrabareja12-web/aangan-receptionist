@@ -13,6 +13,8 @@ const serverSchema = z.object({
   APP_BASE_URL: z.string().url(),
   CRON_SECRET: z.string().min(1),
   DASHBOARD_PASSWORD: z.string().min(1),
+  HUBSPOT_ACCESS_TOKEN: z.string().min(1),
+  HUBSPOT_PORTAL_ID: z.string().regex(/^\d+$/),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

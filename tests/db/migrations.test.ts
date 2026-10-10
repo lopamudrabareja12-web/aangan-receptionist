@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { CALL_STATUSES, DECISIONS, OWNER_STATUSES, STAGES } from "@/lib/domain";
+import { CALL_STATUSES, DECISIONS, OWNER_STATUSES } from "@/lib/domain";
 
 const root = path.resolve(__dirname, "../..");
-const migration = readFileSync(path.join(root, "supabase/migrations/0001_init.sql"), "utf8");
+const migrationFiles = readdirSync(path.join(root, "supabase/migrations")).filter((f) => f.endsWith(".sql")).sort();
 const seed = readFileSync(path.join(root, "supabase/seed.sql"), "utf8");
 
 let db: PGlite;
 
 beforeAll(async () => {
   db = new PGlite();
-  await db.exec(migration);
+  for (const f of migrationFiles) await db.exec(readFileSync(path.join(root, "supabase/migrations", f), "utf8"));
   await db.exec(seed);
 });
 
@@ -27,7 +27,7 @@ async function enumValues(name: string): Promise<string[]> {
 
 describe("schema", () => {
   it("TypeScript enum constants match the database enums", async () => {
-    expect((await enumValues("lead_stage")).sort()).toEqual([...STAGES].sort());
+    expect(await enumValues("lead_stage")).toEqual([]); // stage state lives in HubSpot, not Postgres
     expect((await enumValues("lead_decision")).sort()).toEqual([...DECISIONS].sort());
     expect((await enumValues("call_status")).sort()).toEqual([...CALL_STATUSES].sort());
     expect((await enumValues("owner_status")).sort()).toEqual([...OWNER_STATUSES].sort());
@@ -61,13 +61,13 @@ describe("schema", () => {
   it("a call has at most one lead, and updated_at moves on update", async () => {
     const c = await db.query<{ id: string }>("select id from calls where vaani_call_id = 'call-1'");
     const callId = c.rows[0].id;
-    await db.query("insert into leads (call_id, decision, stage) values ($1, 'qualified', 'new_qualified')", [callId]);
+    await db.query("insert into leads (call_id, decision) values ($1, 'qualified')", [callId]);
     await expect(
-      db.query("insert into leads (call_id, decision, stage) values ($1, 'declined', 'declined')", [callId]),
+      db.query("insert into leads (call_id, decision) values ($1, 'declined')", [callId]),
     ).rejects.toThrow();
     const before = await db.query<{ updated_at: string }>("select updated_at from leads where call_id = $1", [callId]);
     await new Promise((r) => setTimeout(r, 20));
-    await db.query("update leads set stage = 'claimed' where call_id = $1", [callId]);
+    await db.query("update leads set is_vip = true where call_id = $1", [callId]);
     const after = await db.query<{ updated_at: string }>("select updated_at from leads where call_id = $1", [callId]);
     expect(new Date(after.rows[0].updated_at).getTime()).toBeGreaterThan(new Date(before.rows[0].updated_at).getTime());
   });
@@ -84,7 +84,34 @@ describe("schema", () => {
       `select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'public' and c.relkind = 'r'`,
     );
-    expect(r.rows.length).toBe(6);
+    expect(r.rows.length).toBe(8);
     expect(r.rows.every((x) => x.relrowsecurity)).toBe(true);
+  });
+
+  it("leads no longer store stage or owner: HubSpot is the source of truth for those", async () => {
+    const r = await db.query<{ column_name: string }>(
+      "select column_name from information_schema.columns where table_name = 'leads'",
+    );
+    const cols = r.rows.map((x) => x.column_name);
+    for (const gone of ["stage", "designer_id", "claimed_at", "lost_reason", "handoff_note"]) {
+      expect(cols).not.toContain(gone);
+    }
+    expect(cols).toEqual(expect.arrayContaining(["hubspot_contact_id", "hubspot_deal_id"]));
+  });
+
+  it("outbox idempotency key is unique, so the same HubSpot write is never queued twice", async () => {
+    await db.exec("insert into hubspot_outbox (idempotency_key, operation) values ('create_deal:call-1', 'create_deal')");
+    await expect(
+      db.exec("insert into hubspot_outbox (idempotency_key, operation) values ('create_deal:call-1', 'create_deal')"),
+    ).rejects.toThrow();
+    const r = await db.query<{ status: string; attempts: number }>("select status, attempts from hubspot_outbox");
+    expect(r.rows[0]).toEqual({ status: "pending", attempts: 0 });
+  });
+
+  it("two designers cannot map to the same HubSpot owner", async () => {
+    await db.exec("update designers set hubspot_owner_id = '111' where email = 'designer-a@example.invalid'");
+    await expect(
+      db.exec("update designers set hubspot_owner_id = '111' where email = 'designer-b@example.invalid'"),
+    ).rejects.toThrow();
   });
 });

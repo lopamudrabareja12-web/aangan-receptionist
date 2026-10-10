@@ -18,7 +18,8 @@ Scope is **incoming phone calls only**. WhatsApp and the web form are not built.
 3. Existing-client complaints and lost follow-ups escalate to Nikhil; they are never new enquiries.
 4. The 40 transcripts are **historical, human-handled** enquiries. They are test cases and demo data
    (`is_historical = true`), never mixed into live metrics.
-5. No HubSpot unless confirmed.
+5. **HubSpot is required and is the single source of truth** for contacts, deals, pipeline stage, deal owner (designer),
+   tasks, notes and the founder's reports. Supabase never stores lead stage or owner.
 6. Secrets only in `.env.local`. `.env.example` lists names only.
 7. Gemini runs on the billed API, and personal identifiers (name, phone) stay out of Gemini inputs.
 8. The UI is honest: pipeline value is an estimate, and costs come from configurable rates.
@@ -51,11 +52,29 @@ npm run lint
 npm run build
 ```
 
+## HubSpot setup
+
+1. Use a **separate/test HubSpot account**, not a live one.
+2. Create a private app (Settings > Integrations > Private Apps; may appear under Development > Legacy apps) with scopes:
+   `crm.objects.contacts.read/write`, `crm.objects.deals.read/write`, `crm.objects.owners.read`,
+   `crm.schemas.deals.read/write`, `crm.schemas.contacts.read`, plus the notes and tasks scopes shown in the picker.
+   A missing scope returns a 403 whose message names it.
+3. Put the token in `.env.local` as `HUBSPOT_ACCESS_TOKEN` (and the numeric hub id as `HUBSPOT_PORTAL_ID`). Never paste it anywhere else.
+4. Preview, then apply the pipeline and property setup:
+
+```bash
+npm run hubspot:setup                              # dry run, read-only
+npm run hubspot:setup -- --apply --adopt-default   # free plan: reuse the EMPTY default pipeline
+```
+
+The setup is idempotent, never deletes anything, and refuses to rewrite a pipeline that already has deals.
+
 ## Build phases
 
-1. Foundation (this commit): scaffold, schema, seed, env template
-2. Pipeline: webhook, extraction, deterministic rubric, Replay Lab
-3. Notify and claim: email, atomic claim, timeout auto-assign
-4. Dashboard
+1. Foundation: scaffold, schema, seed, env template (done)
+2. A. HubSpot foundation: slim schema, HubSpot client, setup script, deal mapping (done; real-portal smoke test pending)
+   B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (mock HubSpot)
+3. Notify and claim: email, claim lock, owner written to HubSpot, timeout auto-assign
+4. Thin console + manual HubSpot report guide
 5. Voice agent pack for Vaani
 6. Deploy and end-to-end demo
