@@ -31,7 +31,7 @@ export default function ComponentsMapPage() {
       <figure className="mb-8">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/components-map-diagram.png" alt="Swimlane Components Map: caller, Vaani voice agent, our app, Gemini, Supabase, HubSpot, designers and Nikhil across Trigger, Input, Context, Processing, AI and Output" className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800" />
-        <figcaption className="mt-2 text-xs text-zinc-500">Swimlane view. The same map as text is below.</figcaption>
+        <figcaption className="mt-2 text-xs text-zinc-500">Swimlane view. The same map as text is below. <a className="underline" href="/Components-Map-Aangan.pdf" download>Download as PDF</a></figcaption>
       </figure>
 
       <ol className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
