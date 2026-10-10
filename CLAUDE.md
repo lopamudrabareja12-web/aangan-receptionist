@@ -133,6 +133,12 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - `npm run hubspot:setup -- --apply --adopt-default` has been applied: the default pipeline was renamed "Aangan Enquiries" with our 14 stages; 6 custom deal properties created. Side-lane stages at 1% probability are confirmed OPEN (isClosed=false).
 - Designers: only 1 more user can be added on the free plan, so the demo has 2 HubSpot owners.
 
+## Gemini on the FREE tier (decided by Lopa, 10 Oct 2026; reverses the earlier "billed API" rule)
+- Why it matters: Google may use free-tier prompts and responses to improve its products. Acceptable ONLY because the demo and Replay Lab use anonymised historical transcripts and test calls.
+- Still true: phone numbers, emails and the caller's own name are stripped before any Gemini call (src/lib/pipeline/redact.ts).
+- Before any REAL caller data goes through, switch the project to the paid tier (link a billing account in AI Studio) and say so in the write-up.
+- Free tier has low rate limits and may be slower; the replay is throttled and retries on rate-limit errors.
+
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.
