@@ -128,6 +128,11 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Missed calls (T08): the voice agent should answer all calls, so these are rare; a transcript with under 15 caller words is treated as incomplete and gets a callback task, with no AI cost.
 - Vaani webhook payload and signature scheme are ASSUMED (fixtures/vaani/FAKE-sample-call.json, src/lib/vaani/*). Only those files change when a real sample is available.
 
+## HubSpot status (10 Oct 2026)
+- Test portal created (free plan, Hub ID 247653838). Limits found: 2 users max; legacy private apps unavailable, a SERVICE KEY is used instead (works as a Bearer token).
+- `npm run hubspot:setup -- --apply --adopt-default` has been applied: the default pipeline was renamed "Aangan Enquiries" with our 14 stages; 6 custom deal properties created. Side-lane stages at 1% probability are confirmed OPEN (isClosed=false).
+- Designers: only 1 more user can be added on the free plan, so the demo has 2 HubSpot owners.
+
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.

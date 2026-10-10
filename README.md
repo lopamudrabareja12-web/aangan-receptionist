@@ -55,11 +55,12 @@ npm run build
 ## HubSpot setup
 
 1. Use a **separate/test HubSpot account**, not a live one.
-2. Create a private app (Settings > Integrations > Private Apps; may appear under Development > Legacy apps) with scopes:
-   `crm.objects.contacts.read/write`, `crm.objects.deals.read/write`, `crm.objects.owners.read`,
-   `crm.schemas.deals.read/write`, `crm.schemas.contacts.read`, plus the notes and tasks scopes shown in the picker.
-   A missing scope returns a 403 whose message names it.
-3. Put the token in `.env.local` as `HUBSPOT_ACCESS_TOKEN` (and the numeric hub id as `HUBSPOT_PORTAL_ID`). Never paste it anywhere else.
+2. Create a **service key** (new HubSpot accounts no longer have legacy private apps): Settings > Development > Keys > Service Keys > Create.
+   Scopes: `crm.objects.contacts.read/write`, `crm.objects.deals.read/write`, `crm.objects.owners.read`,
+   `crm.schemas.deals.read/write`, `crm.schemas.contacts.read`. A missing scope returns a 403 whose message names it.
+   The service key is used exactly like the old private-app token (sent as a Bearer token); verified on a free account.
+3. Put the key in `.env.local` as `HUBSPOT_ACCESS_TOKEN` (and the numeric hub id as `HUBSPOT_PORTAL_ID`). Never paste it
+   anywhere else, and rotate it immediately if it is ever shown in a chat or screenshot.
 4. Preview, then apply the pipeline and property setup:
 
 ```bash
