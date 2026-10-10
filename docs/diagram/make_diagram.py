@@ -12,7 +12,8 @@ ROWS = [  # key, label, sublabel, height
     ("gemini", "GEMINI", "(LLM · after the call)", 178),
     ("db", "SUPABASE", "(database)", 178),
     ("crm", "HUBSPOT", "(CRM · Nikhil's workspace)", 178),
-    ("design", "DESIGNERS", "(email + claim)", 178),
+    ("mail", "RESEND", "(email service)", 178),
+    ("design", "DESIGNERS", "(claim in the app)", 178),
     ("nikhil", "NIKHIL", "(founder)", 178),
 ]
 ROW_Y, y = {}, HEAD
@@ -49,9 +50,10 @@ BOXES = [  # n, row, col, sub, type, title(optional), lines, planned(dashed)
     (11, "app", 5, "top", "code", None, ["Saves the result and queues", "the CRM write: a HubSpot", "outage never loses a call"], False),
     (12, "db", 5, None, "data", None, ["Stores call, fields, decision,", "cost, audit trail and the", "CRM retry queue (outbox)"], False),
     (13, "crm", 5, None, "data", None, ["Contact + deal in 'Aangan", "Enquiries', handoff note,", "tasks, estimated value"], False),
-    (14, "design", 5, None, "gate", "HUMAN GATE · PLANNED", ["Claim-link email; first to", "claim owns it and confirms", "the visit (after hours: 10am)"], True),
-    (15, "nikhil", 5, None, "human", None, ["Works in HubSpot: every lead,", "escalations first, declines", "kept for review"], False),
-    (16, "caller", 5, None, "human", "LIVE CALL · PLANNED", ["Answered at once. Price asked?", "One warm reason, no number,", "free consultation requested"], True),
+    (14, "mail", 5, None, "ai" if False else "code", "EMAIL · PLANNED", ["Resend emails on-duty designers:", "note + claim link. Unclaimed in", "15 min: auto-assign, alert Nikhil"], True),
+    (15, "design", 5, None, "gate", "HUMAN GATE · PLANNED", ["First to claim owns the deal", "(sets the HubSpot owner) and", "confirms the visit; after hours: 10am"], True),
+    (16, "nikhil", 5, None, "human", None, ["Works in HubSpot; also emailed", "on VIP, complaint and unclaimed", "leads. Declines kept to review"], False),
+    (17, "caller", 5, None, "human", "LIVE CALL · PLANNED", ["Answered at once. Price asked?", "One warm reason, no number,", "free consultation requested"], True),
 ]
 POS = {}
 for n, row, col, sub, *_ in BOXES:
@@ -79,7 +81,9 @@ ARROWS = [  # points, label, position along path, optional label dx
     ([B(11), T(12)], "saved + queued", 0.5),
     ([B(12), T(13)], "retry-safe sync", 0.5),
     ([B(13), T(14)], "deal opens", 0.5),
-    ([L(13), (L(13)[0] - 30, L(13)[1]), (L(13)[0] - 30, L(15)[1]), L(15)], "reports · escalations", 0.5, -118),
+    ([B(14), T(15)], "email + claim link", 0.5),
+    ([R(15), (R(15)[0] + 16, R(15)[1]), (R(15)[0] + 16, R(13)[1]), R(13)], "", 0.5),
+    ([L(13), (L(13)[0] - 30, L(13)[1]), (L(13)[0] - 30, L(16)[1]), L(16)], "reports · escalations", 0.5, -118),
 ]
 
 def label_at(points, t):
@@ -156,7 +160,7 @@ for typ, name, dashed in items:
     add(f'<rect x="{x}" y="{ly}" width="56" height="34" rx="8" fill="{fill}" stroke="{stroke}" stroke-width="3"{d}/>')
     add(f'<text x="{x+72}" y="{ly+25}" font-size="20" fill="#2b3345">{esc(name)}</text>')
     x += 72 + len(name) * 11.5 + 70
-add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 15 (Nikhil\'s HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 16 (Vaani voice pack and a live number) and 14 (designer email and claim)</text>')
+add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 16 (Nikhil\'s HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 17 (Vaani voice pack and a live number) and 14, 15 (designer email, claim and auto-assign)</text>')
 add("</svg>")
 svg = "\n".join(out)
 open("components-map-diagram.svg", "w").write(svg)

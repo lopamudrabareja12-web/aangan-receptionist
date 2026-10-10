@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 2016" width="2400" height="2016" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 2194" width="2400" height="2194" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
 <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2b3345"/></marker></defs>
-<rect width="2400" height="2016" fill="#ffffff"/>
+<rect width="2400" height="2194" fill="#ffffff"/>
 <rect width="2400" height="80" fill="#14161a"/>
 <text x="1200.0" y="58" text-anchor="middle" fill="#fff" font-size="40" font-weight="700" letter-spacing="3">AANGAN STUDIO · AI PHONE RECEPTIONIST · COMPONENTS MAP</text>
 <text x="1200.0" y="102" text-anchor="middle" fill="#9aa3b2" font-size="20">MESA Case 03 · incoming phone calls only · Trigger → Input → Context → Processing → AI → Output</text>
@@ -43,20 +43,24 @@
 <text x="115.0" y="1335.0" text-anchor="middle" font-size="18" fill="#5d6677">(CRM · Nikhil&#x27;s workspace)</text>
 <rect x="0" y="1400" width="2400" height="178" fill="#ffffff"/>
 <line x1="0" y1="1400" x2="2400" y2="1400" stroke="#dfe3ea"/>
-<text x="115.0" y="1485.0" text-anchor="middle" font-size="25" font-weight="700" fill="#161a22">DESIGNERS</text>
-<text x="115.0" y="1513.0" text-anchor="middle" font-size="18" fill="#5d6677">(email + claim)</text>
+<text x="115.0" y="1485.0" text-anchor="middle" font-size="25" font-weight="700" fill="#161a22">RESEND</text>
+<text x="115.0" y="1513.0" text-anchor="middle" font-size="18" fill="#5d6677">(email service)</text>
 <rect x="0" y="1578" width="2400" height="178" fill="#f8f9fb"/>
 <line x1="0" y1="1578" x2="2400" y2="1578" stroke="#dfe3ea"/>
-<text x="115.0" y="1663.0" text-anchor="middle" font-size="25" font-weight="700" fill="#161a22">NIKHIL</text>
-<text x="115.0" y="1691.0" text-anchor="middle" font-size="18" fill="#5d6677">(founder)</text>
-<line x1="230.0" y1="80" x2="230.0" y2="1756" stroke="#dfe3ea"/>
-<line x1="591.6666666666667" y1="80" x2="591.6666666666667" y2="1756" stroke="#dfe3ea"/>
-<line x1="953.3333333333334" y1="80" x2="953.3333333333334" y2="1756" stroke="#dfe3ea"/>
-<line x1="1315.0" y1="80" x2="1315.0" y2="1756" stroke="#dfe3ea"/>
-<line x1="1676.6666666666667" y1="80" x2="1676.6666666666667" y2="1756" stroke="#dfe3ea"/>
-<line x1="2038.3333333333335" y1="80" x2="2038.3333333333335" y2="1756" stroke="#dfe3ea"/>
-<line x1="2400.0" y1="80" x2="2400.0" y2="1756" stroke="#dfe3ea"/>
+<text x="115.0" y="1663.0" text-anchor="middle" font-size="25" font-weight="700" fill="#161a22">DESIGNERS</text>
+<text x="115.0" y="1691.0" text-anchor="middle" font-size="18" fill="#5d6677">(claim in the app)</text>
+<rect x="0" y="1756" width="2400" height="178" fill="#ffffff"/>
 <line x1="0" y1="1756" x2="2400" y2="1756" stroke="#dfe3ea"/>
+<text x="115.0" y="1841.0" text-anchor="middle" font-size="25" font-weight="700" fill="#161a22">NIKHIL</text>
+<text x="115.0" y="1869.0" text-anchor="middle" font-size="18" fill="#5d6677">(founder)</text>
+<line x1="230.0" y1="80" x2="230.0" y2="1934" stroke="#dfe3ea"/>
+<line x1="591.6666666666667" y1="80" x2="591.6666666666667" y2="1934" stroke="#dfe3ea"/>
+<line x1="953.3333333333334" y1="80" x2="953.3333333333334" y2="1934" stroke="#dfe3ea"/>
+<line x1="1315.0" y1="80" x2="1315.0" y2="1934" stroke="#dfe3ea"/>
+<line x1="1676.6666666666667" y1="80" x2="1676.6666666666667" y2="1934" stroke="#dfe3ea"/>
+<line x1="2038.3333333333335" y1="80" x2="2038.3333333333335" y2="1934" stroke="#dfe3ea"/>
+<line x1="2400.0" y1="80" x2="2400.0" y2="1934" stroke="#dfe3ea"/>
+<line x1="0" y1="1934" x2="2400" y2="1934" stroke="#dfe3ea"/>
 <path d="M 410.8 303.0 L 410.8 353.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
 <rect x="372.8" y="311.0" width="76.0" height="34" rx="17" fill="#fff" stroke="#c9cfda"/>
 <text x="410.8" y="334.0" text-anchor="middle" font-size="16" font-style="italic" fill="#4a5262">dials</text>
@@ -90,9 +94,13 @@
 <path d="M 2219.2 1375.0 L 2219.2 1425.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
 <rect x="2158.2" y="1383.0" width="122.0" height="34" rx="17" fill="#fff" stroke="#c9cfda"/>
 <text x="2219.2" y="1406.0" text-anchor="middle" font-size="16" font-style="italic" fill="#4a5262">deal opens</text>
-<path d="M 2067.2 1311.0 L 2037.2 1311.0 L 2037.2 1667.0 L 2067.2 1667.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
-<rect x="1807.6" y="1472.0" width="223.2" height="34" rx="17" fill="#fff" stroke="#c9cfda"/>
-<text x="1919.2" y="1495.0" text-anchor="middle" font-size="16" font-style="italic" fill="#4a5262">reports · escalations</text>
+<path d="M 2219.2 1553.0 L 2219.2 1603.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
+<rect x="2121.4" y="1561.0" width="195.6" height="34" rx="17" fill="#fff" stroke="#c9cfda"/>
+<text x="2219.2" y="1584.0" text-anchor="middle" font-size="16" font-style="italic" fill="#4a5262">email + claim link</text>
+<path d="M 2371.2 1667.0 L 2387.2 1667.0 L 2387.2 1311.0 L 2371.2 1311.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
+<path d="M 2067.2 1311.0 L 2037.2 1311.0 L 2037.2 1845.0 L 2067.2 1845.0" fill="none" stroke="#2b3345" stroke-width="2.6" stroke-dasharray="9 7" marker-end="url(#ah)"/>
+<rect x="1807.6" y="1561.0" width="223.2" height="34" rx="17" fill="#fff" stroke="#c9cfda"/>
+<text x="1919.2" y="1584.0" text-anchor="middle" font-size="16" font-style="italic" fill="#4a5262">reports · escalations</text>
 <rect x="258.8" y="175.0" width="304" height="128" rx="16" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3"/>
 <text x="410.8" y="217.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">Calls the studio number,</text>
 <text x="410.8" y="242.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">any hour, day or night</text>
@@ -176,39 +184,46 @@
 <text x="2219.2" y="1339.0" text-anchor="middle" font-size="17.5" fill="#0f5130">tasks, estimated value</text>
 <circle cx="2071.2" cy="1251.0" r="20" fill="#1f9d55"/>
 <text x="2071.2" y="1258.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">13</text>
-<rect x="2067.2" y="1425.0" width="304" height="128" rx="16" fill="#fff4d6" stroke="#d9a400" stroke-width="3" stroke-dasharray="10 6"/>
-<text x="2219.2" y="1455.0" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2" fill="#d9a400">HUMAN GATE · PLANNED</text>
-<text x="2219.2" y="1483.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">Claim-link email; first to</text>
-<text x="2219.2" y="1508.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">claim owns it and confirms</text>
-<text x="2219.2" y="1533.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">the visit (after hours: 10am)</text>
-<circle cx="2071.2" cy="1429.0" r="20" fill="#d9a400"/>
+<rect x="2067.2" y="1425.0" width="304" height="128" rx="16" fill="#eef0f4" stroke="#3d4659" stroke-width="3" stroke-dasharray="10 6"/>
+<text x="2219.2" y="1455.0" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2" fill="#3d4659">EMAIL · PLANNED</text>
+<text x="2219.2" y="1483.0" text-anchor="middle" font-size="17.5" fill="#222a3a">Resend emails on-duty designers:</text>
+<text x="2219.2" y="1508.0" text-anchor="middle" font-size="17.5" fill="#222a3a">note + claim link. Unclaimed in</text>
+<text x="2219.2" y="1533.0" text-anchor="middle" font-size="17.5" fill="#222a3a">15 min: auto-assign, alert Nikhil</text>
+<circle cx="2071.2" cy="1429.0" r="20" fill="#3d4659"/>
 <text x="2071.2" y="1436.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">14</text>
-<rect x="2067.2" y="1603.0" width="304" height="128" rx="16" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3"/>
-<text x="2219.2" y="1645.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">Works in HubSpot: every lead,</text>
-<text x="2219.2" y="1670.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">escalations first, declines</text>
-<text x="2219.2" y="1695.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">kept for review</text>
-<circle cx="2071.2" cy="1607.0" r="20" fill="#3b6fd4"/>
+<rect x="2067.2" y="1603.0" width="304" height="128" rx="16" fill="#fff4d6" stroke="#d9a400" stroke-width="3" stroke-dasharray="10 6"/>
+<text x="2219.2" y="1633.0" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2" fill="#d9a400">HUMAN GATE · PLANNED</text>
+<text x="2219.2" y="1661.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">First to claim owns the deal</text>
+<text x="2219.2" y="1686.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">(sets the HubSpot owner) and</text>
+<text x="2219.2" y="1711.0" text-anchor="middle" font-size="17.5" fill="#6b4e00">confirms the visit; after hours: 10am</text>
+<circle cx="2071.2" cy="1607.0" r="20" fill="#d9a400"/>
 <text x="2071.2" y="1614.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">15</text>
+<rect x="2067.2" y="1781.0" width="304" height="128" rx="16" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3"/>
+<text x="2219.2" y="1823.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">Works in HubSpot; also emailed</text>
+<text x="2219.2" y="1848.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">on VIP, complaint and unclaimed</text>
+<text x="2219.2" y="1873.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">leads. Declines kept to review</text>
+<circle cx="2071.2" cy="1785.0" r="20" fill="#3b6fd4"/>
+<text x="2071.2" y="1792.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">16</text>
 <rect x="2067.2" y="175.0" width="304" height="128" rx="16" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3" stroke-dasharray="10 6"/>
 <text x="2219.2" y="205.0" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="2" fill="#3b6fd4">LIVE CALL · PLANNED</text>
 <text x="2219.2" y="233.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">Answered at once. Price asked?</text>
 <text x="2219.2" y="258.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">One warm reason, no number,</text>
 <text x="2219.2" y="283.0" text-anchor="middle" font-size="17.5" fill="#1d3b82">free consultation requested</text>
 <circle cx="2071.2" cy="179.0" r="20" fill="#3b6fd4"/>
-<text x="2071.2" y="186.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">16</text>
-<rect x="40" y="1784" width="2320" height="86" rx="22" fill="#14161a"/>
-<text x="1200.0" y="1837" text-anchor="middle" font-size="24" fill="#ffffff"><tspan fill="#f2c230" font-weight="700">THE CUT · CHECKS 06, 07, 09 GUARDRAIL</tspan> · No price is ever quoted. Code decides who qualifies; designers own design and price; Gemini only reads. Complaints go straight to Nikhil.</text>
-<rect x="150" y="1914" width="56" height="34" rx="8" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3"/>
-<text x="222" y="1939" font-size="20" fill="#2b3345">Human action</text>
-<rect x="430.0" y="1914" width="56" height="34" rx="8" fill="#eef0f4" stroke="#3d4659" stroke-width="3"/>
-<text x="502.0" y="1939" font-size="20" fill="#2b3345">App logic (code, not AI)</text>
-<rect x="848.0" y="1914" width="56" height="34" rx="8" fill="#fde8ef" stroke="#d6336c" stroke-width="3"/>
-<text x="920.0" y="1939" font-size="20" fill="#2b3345">AI (Vaani, Gemini)</text>
-<rect x="1197.0" y="1914" width="56" height="34" rx="8" fill="#e6f6ec" stroke="#1f9d55" stroke-width="3"/>
-<text x="1269.0" y="1939" font-size="20" fill="#2b3345">Data (Supabase, HubSpot)</text>
-<rect x="1615.0" y="1914" width="56" height="34" rx="8" fill="#fff4d6" stroke="#d9a400" stroke-width="3"/>
-<text x="1687.0" y="1939" font-size="20" fill="#2b3345">Human gate</text>
-<rect x="1872.0" y="1914" width="56" height="34" rx="8" fill="#fff4d6" stroke="#d9a400" stroke-width="3" stroke-dasharray="8 5"/>
-<text x="1944.0" y="1939" font-size="20" fill="#2b3345">Planned (dashed)</text>
-<text x="1200.0" y="1992" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 15 (Nikhil's HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 16 (Vaani voice pack and a live number) and 14 (designer email and claim)</text>
+<text x="2071.2" y="186.0" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">17</text>
+<rect x="40" y="1962" width="2320" height="86" rx="22" fill="#14161a"/>
+<text x="1200.0" y="2015" text-anchor="middle" font-size="24" fill="#ffffff"><tspan fill="#f2c230" font-weight="700">THE CUT · CHECKS 06, 07, 09 GUARDRAIL</tspan> · No price is ever quoted. Code decides who qualifies; designers own design and price; Gemini only reads. Complaints go straight to Nikhil.</text>
+<rect x="150" y="2092" width="56" height="34" rx="8" fill="#e8f0ff" stroke="#3b6fd4" stroke-width="3"/>
+<text x="222" y="2117" font-size="20" fill="#2b3345">Human action</text>
+<rect x="430.0" y="2092" width="56" height="34" rx="8" fill="#eef0f4" stroke="#3d4659" stroke-width="3"/>
+<text x="502.0" y="2117" font-size="20" fill="#2b3345">App logic (code, not AI)</text>
+<rect x="848.0" y="2092" width="56" height="34" rx="8" fill="#fde8ef" stroke="#d6336c" stroke-width="3"/>
+<text x="920.0" y="2117" font-size="20" fill="#2b3345">AI (Vaani, Gemini)</text>
+<rect x="1197.0" y="2092" width="56" height="34" rx="8" fill="#e6f6ec" stroke="#1f9d55" stroke-width="3"/>
+<text x="1269.0" y="2117" font-size="20" fill="#2b3345">Data (Supabase, HubSpot)</text>
+<rect x="1615.0" y="2092" width="56" height="34" rx="8" fill="#fff4d6" stroke="#d9a400" stroke-width="3"/>
+<text x="1687.0" y="2117" font-size="20" fill="#2b3345">Human gate</text>
+<rect x="1872.0" y="2092" width="56" height="34" rx="8" fill="#fff4d6" stroke="#d9a400" stroke-width="3" stroke-dasharray="8 5"/>
+<text x="1944.0" y="2117" font-size="20" fill="#2b3345">Planned (dashed)</text>
+<text x="1200.0" y="2170" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 16 (Nikhil's HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 17 (Vaani voice pack and a live number) and 14, 15 (designer email, claim and auto-assign)</text>
 </svg>

@@ -75,7 +75,7 @@ export const COMPONENTS_MAP: MapColumn[] = [
     items: [
       { text: "Caller: answered at once, any hour; no price ever quoted, a free consultation offered instead.", status: "assumed" },
       { text: "HubSpot (Nikhil's main workspace): a contact, a deal in the 'Aangan Enquiries' pipeline (estimated value on qualified leads only), a handoff note, and tasks (callback, revisit, urgent escalation).", status: "built" },
-      { text: "Designers: handoff email with a claim link; first to claim becomes the deal owner; auto-assigned if unclaimed after 15 minutes.", status: "planned" },
+      { text: "Email (Resend): the on-duty designers get the handoff note and a claim link. First to claim becomes the HubSpot deal owner and confirms the visit; unclaimed after 15 minutes, it is auto-assigned and Nikhil is alerted. After-hours leads wait until 10:00 IST. Nikhil is also emailed on VIP, complaint and unclaimed leads.", status: "planned" },
       { text: "Founder: HubSpot reports for pipeline and cost vs value, plus a thin console for declined-lead review, costs and replay tests.", status: "planned" },
     ],
   },
