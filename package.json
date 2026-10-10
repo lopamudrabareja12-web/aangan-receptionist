@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "hubspot:setup": "tsx scripts/hubspot-setup.ts",
-    "replay": "tsx scripts/replay.ts"
+    "replay": "tsx scripts/replay.ts",
+    "hubspot:smoke": "tsx scripts/hubspot-smoke.ts"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
