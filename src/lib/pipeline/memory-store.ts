@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CallCost } from "./costs";
 import { DEFAULT_RATES } from "./costs";
-import type { Assignment, CallRecord, Designer, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 /** In-memory PipelineStore for tests and the Replay Lab. Nothing here touches Supabase or HubSpot. */
 export class MemoryStore implements PipelineStore {
@@ -12,6 +12,7 @@ export class MemoryStore implements PipelineStore {
   syncLog: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }[] = [];
   callErrors = new Map<string, string>();
   assignments = new Map<string, Assignment>();
+  callMeta = new Map<string, VaaniCallMeta>();
   designers: Designer[] = [];
 
   constructor(private settings: Settings = { ...DEFAULT_RATES, avg_project_value_inr: 1_100_000, claim_timeout_minutes: 15 }) {}
@@ -105,6 +106,18 @@ export class MemoryStore implements PipelineStore {
 
   async logSync(e: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }) {
     this.syncLog.push(e);
+  }
+
+  async saveCallMeta(meta: VaaniCallMeta) {
+    this.callMeta.set(meta.callId, meta);
+  }
+
+  async getCallMeta(ids: string[]) {
+    for (const id of ids) {
+      const hit = this.callMeta.get(id) ?? [...this.callMeta.values()].find((m) => m.roomName === id);
+      if (hit) return hit;
+    }
+    return null;
   }
 
   // --- Phase 3 ---

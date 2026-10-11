@@ -1,0 +1,22 @@
+{
+  "_note": "Shape copied from Vaani's real webhook_test payload; values and transcript line format invented until a real call is captured.",
+  "event": "call_postprocessing",
+  "call_id": "call_abc",
+  "timestamp": "2026-10-11T10:07:12.000000+00:00",
+  "data": {
+    "room_name": "room_abc",
+    "call_id": "call_abc",
+    "call_duration": 252,
+    "end_reason": "completed",
+    "summary": "Caller wants a full redesign of a 3BHK in Kothrud.",
+    "entities": {
+      "customer_name": "Priya Shah",
+      "intent": "inquiry"
+    },
+    "dispositions": {
+      "call_disposition": "Interested"
+    },
+    "recording_url": "https://example.com/recording.mp3",
+    "transcript": "Agent: Good morning, Aangan Studio. This is an AI assistant and the call may be recorded.\nUser: Hi, I'm Priya. I have a 3BHK in Kothrud, about 1,400 sq ft carpet. We want to redo the whole thing.\nAgent: Lovely. When would you like it finished?\nUser: We'd like to be done by March. We're in no rush. I'm the owner, my husband is happy to go ahead."
+  }
+}

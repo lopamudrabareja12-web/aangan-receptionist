@@ -88,6 +88,15 @@ export interface Designer {
   hubspotOwnerId: string | null;
 }
 
+export interface VaaniCallMeta {
+  callId: string;
+  roomName: string | null;
+  phoneNumber: string | null;
+  callType: string | null;
+  agentName: string | null;
+  startedAt: Date | null;
+}
+
 export interface RecentCall {
   callId: string;
   startedAt: Date;
@@ -114,6 +123,9 @@ export interface PipelineStore {
   completeOutbox(id: string, now: Date): Promise<void>;
   failOutbox(id: string, error: string, nextAttemptAt: Date | null, now: Date): Promise<void>; // null => dead
   setLeadHubspotIds(leadId: string, ids: { contactId: string | null; dealId: string | null }): Promise<void>;
+  /** Vaani's call_started event: the caller's number and the start time, needed when the post-call event arrives. */
+  saveCallMeta(meta: VaaniCallMeta): Promise<void>;
+  getCallMeta(ids: string[]): Promise<VaaniCallMeta | null>;
   // --- Phase 3: notify and claim ---
   createAssignment(a: { leadId: string; kind: "claim" | "escalation"; notifyAt: Date; subject: string; noteText: string; noteHtml: string; isVip: boolean }): Promise<void>;
   getAssignment(leadId: string): Promise<Assignment | null>;

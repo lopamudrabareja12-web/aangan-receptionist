@@ -1,8 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-// ASSUMPTION: HMAC-SHA256 of the raw body, hex encoded, optionally prefixed "sha256=", in this header.
-// Confirm against Vaani's docs; only this file changes.
-export const SIGNATURE_HEADER = "x-vaani-signature";
+// Confirmed against Vaani's real test request: header `x-webhook-signature: sha256=<hex>`, where hex is
+// HMAC-SHA256(secret, exact raw request body). There is no timestamp header. The event name is in `x-webhook-event`.
+export const SIGNATURE_HEADER = "x-webhook-signature";
+export const EVENT_HEADER = "x-webhook-event";
 
 export function sign(rawBody: string, secret: string): string {
   return createHmac("sha256", secret).update(rawBody).digest("hex");

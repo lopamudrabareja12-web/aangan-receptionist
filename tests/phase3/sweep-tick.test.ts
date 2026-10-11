@@ -42,7 +42,7 @@ describe("sweeping stored-but-unfinished calls", () => {
   });
 
   it("rebuilds the call from storage, using the platform's caller name when the payload had one", () => {
-    const rec = { id: "1", vaaniCallId: "v", callerNumber: "+91900", startedAt: new Date(), durationSec: 60, language: "en", transcript: "Caller: hi", rawPayload: { call_id: "v", started_at: "2026-09-02T04:53:00Z", caller_name: "Priya Shah" }, isHistorical: false, status: "received" as const };
+    const rec = { id: "1", vaaniCallId: "v", callerNumber: "+91900", startedAt: new Date(), durationSec: 60, language: "en", transcript: "Caller: hi", rawPayload: { event: "call_postprocessing", timestamp: "2026-09-02T04:53:00Z", data: { call_id: "v", transcript: "Agent: hi", entities: { customer_name: "Priya Shah" } } }, isHistorical: false, status: "received" as const };
     expect(callFromRecord(rec).callerName).toBe("Priya Shah");
     expect(callFromRecord({ ...rec, rawPayload: { weird: true } }).callerName).toBeNull();
   });

@@ -1,0 +1,127 @@
+{
+  "event": "webhook_test",
+  "timestamp": "2026-10-11T14:53:18.093700+00:00",
+  "events": [
+    {
+      "event": "call_started",
+      "timestamp": "2026-10-11T14:53:18.093605+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210",
+        "call_type": "Outbound",
+        "agent_name": "TestAgent"
+      }
+    },
+    {
+      "event": "call_ringing",
+      "timestamp": "2026-10-11T14:53:18.093627+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210"
+      }
+    },
+    {
+      "event": "user_picked_up_at",
+      "timestamp": "2026-10-11T14:53:18.093640+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210",
+        "picked_up_at": "2026-10-11T14:53:18.093634+00:00"
+      }
+    },
+    {
+      "event": "call_rejected",
+      "timestamp": "2026-10-11T14:53:18.093647+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210",
+        "reason": "USER_REJECTED"
+      }
+    },
+    {
+      "event": "call_no_answer",
+      "timestamp": "2026-10-11T14:53:18.093654+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210",
+        "reason": "TIMEOUT"
+      }
+    },
+    {
+      "event": "call_failed",
+      "timestamp": "2026-10-11T14:53:18.093661+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "phone_number": "+919876543210",
+        "reason": "INTERNAL_ERROR"
+      }
+    },
+    {
+      "event": "call_ended",
+      "timestamp": "2026-10-11T14:53:18.093666+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "end_reason": "completed",
+        "call_duration": 120,
+        "technical_issue": false
+      }
+    },
+    {
+      "event": "human_transfer_initiated",
+      "timestamp": "2026-10-11T14:53:18.093673+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "transfer_type": "warm",
+        "phone_number": "+919876543210",
+        "agent_identity": "agent-sip-identity"
+      }
+    },
+    {
+      "event": "human_transfer_successful",
+      "timestamp": "2026-10-11T14:53:18.093679+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "agent_identity": "agent-sip-identity"
+      }
+    },
+    {
+      "event": "human_transfer_failed",
+      "timestamp": "2026-10-11T14:53:18.093686+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "reason": "NO_ANSWER",
+        "agent_identity": "agent-sip-identity",
+        "sip_status": "408"
+      }
+    },
+    {
+      "event": "call_postprocessing",
+      "call_id": "test_room_123",
+      "timestamp": "2026-10-11T14:53:18.093695+00:00",
+      "data": {
+        "room_name": "test_room_123",
+        "call_id": "test_room_123",
+        "call_duration": 120,
+        "end_reason": "completed",
+        "summary": "This is a sample summary for testing.",
+        "entities": {
+          "customer_name": "John Doe",
+          "intent": "inquiry"
+        },
+        "dispositions": {
+          "CATALOG ID": "44",
+          "call_disposition": "Interested"
+        },
+        "recording_url": "https://example.com/recording.mp3",
+        "transcript": "Agent: Hello\nUser: Hi"
+      }
+    }
+  ]
+}

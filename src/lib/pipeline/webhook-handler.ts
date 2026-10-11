@@ -1,5 +1,5 @@
-import { parseVaaniPayload, PayloadError, type NormalizedCall } from "@/lib/vaani/adapter";
-import { SIGNATURE_HEADER, verifySignature } from "@/lib/vaani/signature";
+import { parseVaaniEvent, PayloadError, type CallMeta, type ParsedCall } from "@/lib/vaani/adapter";
+import { EVENT_HEADER, SIGNATURE_HEADER, verifySignature } from "@/lib/vaani/signature";
 
 export interface Accepted {
   callId: string;
@@ -10,8 +10,10 @@ export interface Accepted {
 
 export interface WebhookDeps {
   secret: string;
-  /** Stores the call (one fast write). If this throws, we answer 500 and Vaani retries. */
-  accept: (call: NormalizedCall, opts: { rawPayload: unknown }) => Promise<Accepted>;
+  /** Remember the caller's number and start time from Vaani's call_started event. */
+  onCallStarted: (meta: CallMeta) => Promise<void>;
+  /** Stores the finished call (one fast write). If this throws, we answer 500 and Vaani retries. */
+  accept: (call: ParsedCall, opts: { rawPayload: unknown }) => Promise<Accepted>;
   /** Runs work after the response (Next's after()). Failures are caught: a stored-but-unprocessed call is swept up later. */
   schedule: (work: () => Promise<unknown>) => void;
 }
@@ -19,7 +21,8 @@ export interface WebhookDeps {
 const json = (body: unknown, status: number) => Response.json(body, { status });
 
 /**
- * POST handler logic for Vaani's end-of-call webhook. Verify, parse, store, reply 200, then process in the background.
+ * POST handler logic for Vaani's webhooks. Verify, then by event: acknowledge tests and irrelevant events, remember
+ * call_started, and for call_postprocessing store the call, reply 200, and process in the background.
  * Responses never echo the payload, the secret or internal error text.
  */
 export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promise<Response> {
@@ -33,16 +36,30 @@ export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promi
   } catch {
     return json({ error: "body is not valid JSON" }, 400);
   }
-  let call: NormalizedCall;
+  let event;
   try {
-    call = parseVaaniPayload(body);
+    event = parseVaaniEvent(body, req.headers.get(EVENT_HEADER));
   } catch (e) {
     if (e instanceof PayloadError) return json({ error: e.message }, 400);
     throw e;
   }
+
+  if (event.kind === "test") return json({ status: "test_ok" }, 200);
+  if (event.kind === "ignored") return json({ status: "ignored", event: event.event }, 200);
+
+  if (event.kind === "call_started") {
+    try {
+      await deps.onCallStarted(event.meta);
+    } catch (e) {
+      console.error("[vaani-webhook] could not save call_started:", e instanceof Error ? e.name : "unknown");
+      return json({ error: "could not save, please retry" }, 500);
+    }
+    return json({ status: "noted" }, 200);
+  }
+
   let accepted: Accepted;
   try {
-    accepted = await deps.accept(call, { rawPayload: body });
+    accepted = await deps.accept(event.call, { rawPayload: body });
   } catch (e) {
     console.error("[vaani-webhook] could not store the call:", e instanceof Error ? e.name : "unknown");
     return json({ error: "could not store the call, please retry" }, 500);

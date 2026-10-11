@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Decision } from "@/lib/domain";
 import type { CallCost } from "./costs";
-import type { Assignment, CallRecord, Designer, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 // Production store. NOTE: typechecked and written against the schema in supabase/migrations, but only exercised
 // against a real Supabase project at the smoke test (the in-memory store covers all pipeline logic in tests).
@@ -166,6 +166,28 @@ export class SupabaseStore implements PipelineStore {
       await this.db.from("hubspot_sync_log").insert({ outbox_id: e.outboxId, lead_id: e.leadId, operation: e.operation, ok: e.ok, http_status: e.httpStatus ?? null, detail: e.detail ?? null }),
       "log sync",
     );
+  }
+
+  async saveCallMeta(m: VaaniCallMeta) {
+    must(
+      await this.db.from("vaani_call_meta").upsert(
+        { call_id: m.callId, room_name: m.roomName, phone_number: m.phoneNumber, call_type: m.callType, agent_name: m.agentName, started_at: m.startedAt?.toISOString() ?? null },
+        { onConflict: "call_id" },
+      ),
+      "save call meta",
+    );
+  }
+
+  async getCallMeta(ids: string[]): Promise<VaaniCallMeta | null> {
+    const wanted = ids.filter(Boolean);
+    if (!wanted.length) return null;
+    const r = must(
+      await this.db.from("vaani_call_meta").select("*").or(wanted.map((i) => `call_id.eq.${i},room_name.eq.${i}`).join(",")).limit(1).maybeSingle(),
+      "get call meta",
+    ) as Record<string, unknown> | null;
+    return r
+      ? { callId: r.call_id as string, roomName: (r.room_name as string) ?? null, phoneNumber: (r.phone_number as string) ?? null, callType: (r.call_type as string) ?? null, agentName: (r.agent_name as string) ?? null, startedAt: r.started_at ? new Date(r.started_at as string) : null }
+      : null;
   }
 
   // --- Phase 3: notify and claim ---

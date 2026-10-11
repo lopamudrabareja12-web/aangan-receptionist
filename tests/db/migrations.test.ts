@@ -84,7 +84,7 @@ describe("schema", () => {
       `select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'public' and c.relkind = 'r'`,
     );
-    expect(r.rows.length).toBe(9);
+    expect(r.rows.length).toBe(10);
     expect(r.rows.every((x) => x.relrowsecurity)).toBe(true);
   });
 
@@ -147,5 +147,10 @@ describe("schema", () => {
     expect((await claim(d.rows[1].id)).rows).toHaveLength(0); // second changes nothing
     const owner = await db.query<{ designer_id: string }>("select designer_id from lead_assignments where lead_id = $1", [leadId]);
     expect(owner.rows[0].designer_id).toBe(d.rows[0].id);
+  });
+
+  it("migration 0005: Vaani call metadata is keyed by call id and has row level security", async () => {
+    await db.exec("insert into vaani_call_meta (call_id, room_name, phone_number) values ('call_abc', 'room_abc', '+919000000099')");
+    await expect(db.exec("insert into vaani_call_meta (call_id) values ('call_abc')")).rejects.toThrow();
   });
 });

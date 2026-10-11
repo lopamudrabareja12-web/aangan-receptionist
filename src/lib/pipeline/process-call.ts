@@ -1,6 +1,6 @@
 import { normalizePhone } from "@/lib/phone";
 import type { DealInput } from "@/lib/hubspot/deal-mapping";
-import { parseVaaniPayload, type NormalizedCall } from "@/lib/vaani/adapter";
+import { parseVaaniEvent, type NormalizedCall } from "@/lib/vaani/adapter";
 import { istMorning, nextWorkingStart } from "@/lib/time";
 import { computeCallCost } from "./costs";
 import type { Extractor } from "./extractor";
@@ -48,7 +48,8 @@ export async function receiveCall(
 export function callFromRecord(row: CallRecord): NormalizedCall {
   let name: string | null = null;
   try {
-    name = parseVaaniPayload(row.rawPayload).callerName;
+    const ev = parseVaaniEvent(row.rawPayload);
+    if (ev.kind === "call") name = ev.call.callerName;
   } catch {
     /* the stored payload is not in the expected shape: carry on without a platform-supplied name */
   }

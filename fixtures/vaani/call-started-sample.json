@@ -1,0 +1,12 @@
+{
+  "_note": "Shape copied from Vaani's real webhook_test payload; values invented. Event arrives on its own with x-webhook-event: call_started.",
+  "event": "call_started",
+  "timestamp": "2026-10-11T10:03:00.000000+00:00",
+  "data": {
+    "room_name": "room_abc",
+    "call_id": "call_abc",
+    "phone_number": "+919000000099",
+    "call_type": "Inbound",
+    "agent_name": "aangan-test"
+  }
+}

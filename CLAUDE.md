@@ -151,6 +151,13 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Only ONE HubSpot user exists (the free plan allows 2), so the single designer is Lopa herself; Nikhil's alert address is the same inbox. Resend's test sender delivers only to the account owner's address.
 - The timer secret appeared in a screenshot shared in chat; rotate CRON_SECRET (.env.local, Vercel, re-run the cron SQL) before real use.
 
+## Vaani webhook: real format captured (11 Oct 2026)
+- Where: Vaani dashboard > Developers > Webhooks > "New End Point" (Agent Webhook tab); not under Settings. Fields: name, endpoint URL, optional signing secret, agents, events (+ "Send all call details" under Call Post-Processing). "Test Connectivity" sends a `webhook_test` bundle of all 11 events.
+- Headers: `x-webhook-event`, `x-webhook-signature: sha256=<hex>` where hex = HMAC-SHA256(secret, exact raw body). No timestamp header. VERIFIED by recomputing the signature of a captured request.
+- Each event: { event, timestamp, data: {...} }. call_started has phone_number + call_type (the caller's number for Inbound); call_postprocessing (top-level call_id too) has transcript ("Agent: ...\nUser: ..."), call_duration, summary, entities, dispositions, recording_url but NO number or start time -> we store call_started in vaani_call_meta and join.
+- STILL UNCONFIRMED until a real call is captured: exact transcript line format with timestamps, whether call_duration is seconds or milliseconds (we treat >10,000 as ms), whether call_id equals room_name, and Hindi/Marathi support.
+- Our endpoint: POST https://aangan-receptionist-beta.vercel.app/api/webhooks/vaani with the secret in VAANI_WEBHOOK_SECRET.
+
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.
