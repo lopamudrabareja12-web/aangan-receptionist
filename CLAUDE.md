@@ -161,6 +161,10 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Lead from that call is in HubSpot (deal "Priya · 3BHK apartment · Kothrud") and waits for the 10:00 IST designer email (after-hours rule).
 - Our endpoint: POST https://aangan-receptionist-beta.vercel.app/api/webhooks/vaani with the secret in VAANI_WEBHOOK_SECRET.
 
+## Phase 5 status (12 Oct 2026)
+- Voice agent pack written and tested in voice-agent/ (prompt, greeting, 5 knowledge files, SETUP.md). NOT yet pasted into Vaani: Lopa to follow SETUP.md (or ask Claude to fill the Vaani forms via the browser, leaving the secret and Save to her). The webhook must be moved to the new agent (one webhook per agent).
+- The few-shot examples come from T01, T02, T03, T07, T09 (prompt-example half only); a test fails if a held-out call is used.
+
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
 - Real-time booking vs "request a slot, designer confirms". Proposed: request.

@@ -107,7 +107,7 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
    B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (built; Gemini and Supabase untested live)
 3. Notify and claim: email via Resend, first-claim-wins link, owner written to HubSpot, 15-minute auto-assign, every-minute job (built and tested live)
 4. Thin console + manual HubSpot report guide
-5. Voice agent pack for Vaani
+5. Voice agent pack for Vaani (built: `voice-agent/`; follow `voice-agent/SETUP.md`)
 6. Deploy and end-to-end demo
 
 ## Notify and claim (Phase 3)
@@ -122,3 +122,10 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
   pushes queued writes to HubSpot, sends due emails, auto-assigns. To stop it: `select cron.unschedule('aangan-tick');`
 - `npm run designers:sync -- --apply` links real HubSpot users as designers. `npm run phase3:smoke` and `npm run email:test` are live tests.
 - Email uses Resend's test sender, which only delivers to the Resend account's own address. A real rollout needs a verified domain.
+
+## Voice agent pack (Phase 5)
+
+`voice-agent/` has everything to paste into Vaani: `prompt.md` (the system prompt, with five examples adapted from the
+prompt-example half of the historical calls), `greeting.md`, five knowledge files, and `SETUP.md` (step by step, with eight test calls).
+`tests/voice-agent.test.ts` guards it: no figure from the internal pricing guide, no currency symbols, the exact approved pricing reply,
+the AI-and-recording greeting, one question at a time, every must-have field, the 15-minute complaint rule, and that no held-out call is used as an example.
