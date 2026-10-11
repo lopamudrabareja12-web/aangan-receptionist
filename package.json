@@ -14,7 +14,8 @@
     "hubspot:smoke": "tsx scripts/hubspot-smoke.ts",
     "supabase:smoke": "tsx scripts/supabase-smoke.ts",
     "designers:sync": "tsx scripts/designers-sync.ts",
-    "phase3:smoke": "tsx scripts/phase3-smoke.ts"
+    "phase3:smoke": "tsx scripts/phase3-smoke.ts",
+    "email:test": "tsx scripts/email-test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",
