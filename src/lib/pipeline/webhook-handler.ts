@@ -28,6 +28,12 @@ const json = (body: unknown, status: number) => Response.json(body, { status });
 export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promise<Response> {
   const raw = await req.text(); // the signature covers the exact raw bytes, so read the body once as text
   if (!verifySignature(raw, req.headers.get(SIGNATURE_HEADER), deps.secret)) {
+    // Diagnostic (no secrets): why was it rejected? "placeholder" = signed with the throwaway word we used while capturing samples.
+    const header = req.headers.get(SIGNATURE_HEADER);
+    console.warn("[vaani-webhook] signature rejected", JSON.stringify({
+      event: req.headers.get(EVENT_HEADER), hasSignature: !!header, bytes: raw.length,
+      signedWithPlaceholderSecret: verifySignature(raw, header, "capture-test-secret"),
+    }));
     return json({ error: "invalid signature" }, 401);
   }
   let body: unknown;
