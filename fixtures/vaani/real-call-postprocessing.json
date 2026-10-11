@@ -1,0 +1,54 @@
+{
+  "to": "+919000000099",
+  "data": {
+    "call_id": "outbound-1791748447-1c9752ee",
+    "summary": "The caller, Priya, contacted Aangan Studio to inquire about a full home renovation for her 1400 sq ft residential property in Kothrud. The agent successfully collected all necessary project details and confirmed the information with the caller. The call concluded with the agent thanking the caller, effectively completing the intake process.",
+    "entities": {
+      "caller_name": "Priya",
+      "project_size": "1400 sq ft",
+      "project_type": "Residential",
+      "project_location": "Kothrud"
+    },
+    "transfer": {
+      "reason": null,
+      "transferred": false,
+      "transfer_type": null,
+      "agent_identity": null,
+      "transferred_to": null,
+      "transfer_status": null
+    },
+    "call_type": "outbound",
+    "room_name": "outbound-1791748447-1c9752ee",
+    "agent_name": "aanganaangan-test",
+    "end_reason": "Call ended",
+    "transcript": "[19:54:27] AGENT: Hello, this is a test call for Aangan Studio. May I know your name please?\n[19:54:33] AGENT: नमस्ते?\n[19:54:45] USER: 3 BHP Just Latin Cot Road about 1400 I want to redo the whole home. and I'd like it done by March I am the owner.\n[19:54:52] AGENT: Thank you for sharing those details! May I please have your name first?\n[19:54:55] USER: Priya\n[19:55:04] AGENT: Nice to meet you, Priya! What type of project is this—is it a residential home, an office, or something else?\n[19:55:07] USER: Presidential\n[19:55:12] AGENT: Got it, a residential project! And where is the project located, Priya?\n[19:55:23] USER: It's in Kothrud.\n[19:55:27] AGENT: Understood, Kothrud! And what is the size of the project?\n[19:55:32] USER: Fourteen 300 feet\n[19:55:32] AGENT: So, just to confirm: Name: Priya Project Type: Residential Location: Kothrud Size: 1400 sq ft Thank you so much for sharing all the details! Dhanyavaad! Goodbye!\n[19:55:51] AGENT: Got it, 1400 sq ft! So, just to confirm: - **Name:** Priya - **Project Type:** Residential - **Location:** Kothrud - **Size:** 1400 sq ft Thank you so much for sharing all the details! Dhanyavaad! Goodbye!",
+    "dispositions": {
+      "Call Outcome": "All Info Collected"
+    },
+    "phone_number": "+919000000099",
+    "picked_up_at": "2026-10-11T19:54:21.267404+00:00",
+    "call_duration": 93.43,
+    "call_ended_at": "2026-10-11T19:55:57.914150+00:00",
+    "disconnection": {
+      "reason": null,
+      "sip_status": null,
+      "error_message": null
+    },
+    "recording_url": "https://app.vaanivoice.ai/api/stream/outbound-1791748447-1c9752ee?token=b3V0Ym91bmQtMTc5MTc0ODQ0Ny0xYzk3NTJlZXwzZDI5NTZmYy01NDliLTQ2YTAtYjY1ZS1mMWQ5OWJjZDM5NDB8OGIzNmI1YzUtYzUzOS00NTFjLWIzNjEtNjgwNWZkNmI0NTMyfDE3OTk1MjQ1NjZ8ZDkyMTM1MGMwNzQzMmJhMmEyZGI1ZWJjYTRjNjNkODI5YWM3N2RmOTBiOWY1MjM5Y2IzNjRiMTJlODFmNWI4NA",
+    "call_dialing_at": "2026-10-11T19:54:10.986909+00:00",
+    "call_ringing_at": "2026-10-11T19:54:11.252386+00:00",
+    "call_started_at": "2026-10-11T19:54:07.543001+00:00",
+    "technical_issue": false,
+    "conversation_quality": {
+      "clarity": 8,
+      "overall_quality": 9,
+      "professionalism": 9,
+      "problem_resolution": 10
+    }
+  },
+  "from": "+919000000099",
+  "event": "call_postprocessing",
+  "call_id": "outbound-1791748447-1c9752ee",
+  "timestamp": "2026-10-11T19:56:06.105158+00:00",
+  "_note": "Real call_postprocessing event captured 12 Oct 2026 from Vaani's browser Start Test (an OUTBOUND call to the owner's phone). Phone numbers replaced with a fake number; recording URL replaced."
+}

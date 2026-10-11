@@ -13,6 +13,7 @@ const fx = (name: string) => readFileSync(path.join(__dirname, "../../fixtures/v
 const testSample = fx("webhook-test-sample.json");
 const started = fx("call-started-sample.json");
 const post = fx("call-postprocessing-sample.json");
+const real = fx("real-call-postprocessing.json");
 
 const setup = () => {
   const store = new MemoryStore();
@@ -112,11 +113,36 @@ describe("adapter details", () => {
     expect(normalizeTranscript([{ speaker: "assistant", text: "Hi" }, { speaker: "user", text: "Hello" }])).toBe("Agent: Hi\nCaller: Hello");
     expect(normalizeTranscript(undefined)).toBe("");
   });
-  it("joins the post-call event with call_started; without it the number is unknown and the start time is estimated", () => {
+  it("REAL captured call: number, start time, duration, name and transcript come straight from call_postprocessing", () => {
+    const e = parseVaaniEvent(JSON.parse(real), "call_postprocessing");
+    if (e.kind !== "call") throw new Error("expected a call");
+    expect(e.call).toMatchObject({ vaaniCallId: "outbound-1791748447-1c9752ee", durationSec: 93, callerName: "Priya", phoneNumber: "+919000000099" });
+    expect(e.call.startedAt?.toISOString()).toBe("2026-10-11T19:54:07.543Z");
+    const lines = e.call.transcript.split("\n");
+    expect(lines.every((l) => /^(Agent|Caller): /.test(l))).toBe(true); // timestamps stripped, speakers mapped
+    expect(lines[0]).toBe("Agent: Hello, this is a test call for Aangan Studio. May I know your name please?");
+    expect(e.call.transcript).toContain("Caller: Priya");
+    expect(e.call.transcript).toContain("नमस्ते"); // Hindi passes through untouched
+    expect(toNormalizedCall(e.call, null)).toMatchObject({ callerNumber: "+919000000099", durationSec: 93 });
+  });
+  it("falls back to the To/From fields when the event has no phone_number, by call direction", () => {
+    const base = JSON.parse(real);
+    delete base.data.phone_number;
+    base.to = "+919111111111";
+    base.from = "+919222222222";
+    base.data.call_type = "outbound";
+    const out = parseVaaniEvent(base);
+    const inn = parseVaaniEvent({ ...base, data: { ...base.data, call_type: "Inbound" } });
+    if (out.kind !== "call" || inn.kind !== "call") throw new Error("expected calls");
+    expect(out.call.phoneNumber).toBe("+919111111111"); // outbound: the other party is "to"
+    expect(inn.call.phoneNumber).toBe("+919222222222"); // inbound: the caller is "from"
+  });
+  it("joins the post-call event with call_started when the event itself lacks the number and start time", () => {
     const e = parseVaaniEvent(JSON.parse(post));
     const s = parseVaaniEvent(JSON.parse(started));
     if (e.kind !== "call" || s.kind !== "call_started") throw new Error("unexpected");
     expect(toNormalizedCall(e.call, s.meta)).toMatchObject({ callerNumber: "+919000000099", durationSec: 252 });
+    expect(toNormalizedCall({ ...e.call, phoneNumber: "+919333333333" }, s.meta).callerNumber).toBe("+919333333333"); // the event's own number wins
     const bare = toNormalizedCall(e.call, null);
     expect(bare.callerNumber).toBeNull();
     expect(bare.startedAt.toISOString()).toBe("2026-10-11T10:03:00.000Z"); // 10:07:12 minus 252 s
@@ -157,6 +183,16 @@ describe("POST /api/webhooks/vaani (handler)", () => {
     await scheduled[0]();
     expect([...store.leads.values()][0].phone).toBe("+919000000099");
     expect([...store.calls.values()][0].callerNumber).toBe("+919000000099");
+  });
+  it("REAL call end to end: stored with the caller's number and a clean transcript, and processed into a lead, with no call_started needed", async () => {
+    const { store, send, scheduled } = setup();
+    const res = await send(real, { event: "call_postprocessing" });
+    expect(await res.json()).toMatchObject({ status: "accepted" });
+    const call = [...store.calls.values()][0];
+    expect(call).toMatchObject({ callerNumber: "+919000000099", durationSec: 93 });
+    expect(call.startedAt.toISOString()).toBe("2026-10-11T19:54:07.543Z");
+    await scheduled[0]();
+    expect([...store.leads.values()][0]).toMatchObject({ name: "Priya", phone: "+919000000099" });
   });
   it("replies 200 'accepted' BEFORE the slow work runs (Vaani allows only 5 seconds)", async () => {
     const { store, send, scheduled, order } = setup();

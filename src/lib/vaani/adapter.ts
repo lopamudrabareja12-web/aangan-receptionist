@@ -3,7 +3,8 @@ import { z } from "zod";
 // Maps Vaani's webhook events to our internal shapes. Built from Vaani's real "Test Connectivity" payload and docs
 // (captured 11 Oct 2026). Each event is  { event, timestamp, data: {...} }  with  x-webhook-event  and  x-webhook-signature  headers.
 // Only call_started (caller number, start time) and call_postprocessing (transcript) matter to us; the rest are acknowledged.
-// STILL TO CONFIRM with a real call: the transcript line format and whether call_duration is seconds or milliseconds.
+// CONFIRMED on a real call (12 Oct 2026): transcript lines look like "[19:54:27] AGENT: ..." / "[..] USER: ...", call_duration is
+// decimal SECONDS (93.43), and call_postprocessing itself carries phone_number, call_type, call_started_at, to and from.
 
 export interface NormalizedCall {
   vaaniCallId: string;
@@ -31,6 +32,9 @@ export interface ParsedCall {
   eventAt: Date;
   transcript: string;
   callerName: string | null;
+  /** The real post-call event carries these itself (the docs said it does not), so call_started is only a fallback. */
+  phoneNumber: string | null;
+  startedAt: Date | null;
 }
 
 export type VaaniEvent =
@@ -112,20 +116,24 @@ export function parseVaaniEvent(raw: unknown, eventHeader?: string | null): Vaan
     const callId = str(data.call_id) ?? body.call_id ?? str(data.room_name);
     if (!callId) throw new PayloadError("call_postprocessing has no call id");
     const entities = (data.entities ?? {}) as Record<string, unknown>;
+    const inbound = /^inbound$/i.test(str(data.call_type) ?? "");
+    const startedRaw = str(data.call_started_at);
     return {
       kind: "call",
       call: {
         vaaniCallId: callId, roomName: str(data.room_name), durationSec: durationToSeconds(data.call_duration),
         eventAt: body.timestamp ? new Date(body.timestamp) : new Date(), transcript: normalizeTranscript(data.transcript),
         callerName: str(entities.customer_name) ?? str(entities.name) ?? str(entities.caller_name),
+        phoneNumber: str(data.phone_number) ?? str((raw as { from?: unknown; to?: unknown })[inbound ? "from" : "to"]),
+        startedAt: startedRaw && !Number.isNaN(Date.parse(startedRaw)) ? new Date(startedRaw) : null,
       },
     };
   }
   return { kind: "ignored", event: event || "(no event name)" };
 }
 
-/** Joins the post-call event with what call_started told us. Without it, the number is unknown and the start time is estimated. */
+/** Builds the call from the post-call event, falling back to what call_started told us, then to an estimate of the start time. */
 export function toNormalizedCall(c: ParsedCall, meta: CallMeta | null): NormalizedCall {
-  const startedAt = meta?.startedAt ?? new Date(c.eventAt.getTime() - (c.durationSec ?? 0) * 1000);
-  return { vaaniCallId: c.vaaniCallId, callerNumber: meta?.phoneNumber ?? null, startedAt, durationSec: c.durationSec, language: null, callerName: c.callerName, transcript: c.transcript };
+  const startedAt = c.startedAt ?? meta?.startedAt ?? new Date(c.eventAt.getTime() - (c.durationSec ?? 0) * 1000);
+  return { vaaniCallId: c.vaaniCallId, callerNumber: c.phoneNumber ?? meta?.phoneNumber ?? null, startedAt, durationSec: c.durationSec, language: null, callerName: c.callerName, transcript: c.transcript };
 }
