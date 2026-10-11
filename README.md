@@ -105,7 +105,20 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
 1. Foundation: scaffold, schema, seed, env template (done)
 2. A. HubSpot foundation: slim schema, HubSpot client, setup script, deal mapping (done; real-portal smoke test pending)
    B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (built; Gemini and Supabase untested live)
-3. Notify and claim: email, claim lock, owner written to HubSpot, timeout auto-assign
+3. Notify and claim: email via Resend, first-claim-wins link, owner written to HubSpot, 15-minute auto-assign, every-minute job (built and tested live)
 4. Thin console + manual HubSpot report guide
 5. Voice agent pack for Vaani
 6. Deploy and end-to-end demo
+
+## Notify and claim (Phase 3)
+
+- A qualified lead becomes a HubSpot deal, then every on-duty designer linked to a HubSpot user gets an email with the handoff
+  note and their own claim link. The link opens a page with a Claim button (a POST, so mail scanners cannot claim by accident).
+  The first claim wins (one atomic database update), sets the HubSpot deal owner, moves New to Claimed and leaves a note.
+- Unclaimed after 15 working minutes (10:00-19:00 IST): auto-assigned to the designer with the fewest open deals in HubSpot.
+- Nikhil is emailed on VIP leads, complaints (at once), auto-assignments, and when no designer is on duty.
+- After-hours leads wait until 10:00 IST.
+- `POST /api/cron/tick` (secret required) runs every minute from a Supabase `pg_cron` job named `aangan-tick`: re-runs stuck calls,
+  pushes queued writes to HubSpot, sends due emails, auto-assigns. To stop it: `select cron.unschedule('aangan-tick');`
+- `npm run designers:sync -- --apply` links real HubSpot users as designers. `npm run phase3:smoke` and `npm run email:test` are live tests.
+- Email uses Resend's test sender, which only delivers to the Resend account's own address. A real rollout needs a verified domain.

@@ -40,7 +40,7 @@ BOXES = [  # n, row, col, sub, type, title(optional), lines, planned(dashed)
     (1, "caller", 0, None, "human", None, ["Calls the studio number,", "any hour, day or night", "(1 in 3 enquiries come", "after hours)"], False),
     (2, "vaani", 0, None, "ai", "VOICE PACK · PLANNED", ["Answers EVERY call, English", "and Hindi; says it is an AI", "and may record the call"], True),
     (3, "vaani", 1, None, "ai", "TO CONFIRM (TEST CALL)", ["Call ends: sends a webhook", "with transcript, duration", "and summary"], True),
-    (4, "app", 1, "top", "code", None, ["Receives the transcript,", "duration and summary", "(5-second reply: planned)"], False),
+    (4, "app", 1, "top", "code", None, ["Receives the transcript,", "duration and summary", "(replies within 5 seconds)"], False),
     (5, "app", 2, "bottom", "code", None, ["Loads the rules: services,", "Nikhil's 5-point rubric,", "ONE price reply, NO prices"], False),
     (6, "db", 2, None, "data", None, ["Earlier calls from same", "number (10-min dedupe),", "cost rates, settings"], False),
     (7, "app", 3, "top", "code", None, ["Verifies the signature,", "stores the call ONCE,", "checks for a redial"], False),
@@ -50,8 +50,8 @@ BOXES = [  # n, row, col, sub, type, title(optional), lines, planned(dashed)
     (11, "app", 5, "top", "code", None, ["Saves the result and queues", "the CRM write: a HubSpot", "outage never loses a call"], False),
     (12, "db", 5, None, "data", None, ["Stores call, fields, decision,", "cost, audit trail and the", "CRM retry queue (outbox)"], False),
     (13, "crm", 5, None, "data", None, ["Contact + deal in 'Aangan", "Enquiries', handoff note,", "tasks, estimated value"], False),
-    (14, "mail", 5, None, "ai" if False else "code", "EMAIL · PLANNED", ["Resend emails on-duty designers:", "note + claim link. Unclaimed in", "15 min: auto-assign, alert Nikhil"], True),
-    (15, "design", 5, None, "gate", "HUMAN GATE · PLANNED", ["First to claim owns the deal", "(sets the HubSpot owner) and", "confirms the visit; after hours: 10am"], True),
+    (14, "mail", 5, None, "code", "EMAIL · BUILT", ["Resend emails on-duty designers:", "note + claim link. Unclaimed in", "15 min: auto-assign, alert Nikhil"], False),
+    (15, "design", 5, None, "gate", "HUMAN GATE · BUILT", ["First to claim owns the deal", "(sets the HubSpot owner) and", "confirms the visit; after hours: 10am"], False),
     (16, "nikhil", 5, None, "human", None, ["Works in HubSpot; also emailed", "on VIP, complaint and unclaimed", "leads. Declines kept to review"], False),
     (17, "caller", 5, None, "human", "LIVE CALL · PLANNED", ["Answered at once. Price asked?", "One warm reason, no number,", "free consultation requested"], True),
 ]
@@ -160,7 +160,7 @@ for typ, name, dashed in items:
     add(f'<rect x="{x}" y="{ly}" width="56" height="34" rx="8" fill="{fill}" stroke="{stroke}" stroke-width="3"{d}/>')
     add(f'<text x="{x+72}" y="{ly+25}" font-size="20" fill="#2b3345">{esc(name)}</text>')
     x += 72 + len(name) * 11.5 + 70
-add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested: 4 to 13 and 16 (Nikhil\'s HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 17 (Vaani voice pack and a live number) and 14, 15 (designer email, claim and auto-assign)</text>')
+add(f'<text x="{W/2}" y="{ly+78}" text-anchor="middle" font-size="19" fill="#5d6677">Built and tested live: 4 to 16 (Nikhil\'s HubSpot reports are set up by hand) · Planned or to confirm: 2, 3, 17 (Vaani voice pack and a live phone number)</text>')
 add("</svg>")
 svg = "\n".join(out)
 open("components-map-diagram.svg", "w").write(svg)

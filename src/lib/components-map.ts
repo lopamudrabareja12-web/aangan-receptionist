@@ -55,7 +55,7 @@ export const COMPONENTS_MAP: MapColumn[] = [
       { text: "Remove phone numbers, emails and the caller's own name before any AI call.", status: "built" },
       { text: "Apply Nikhil's rubric in plain, unit-tested code (no AI): qualified, qualified with flags, declined (with reason), deferred (with revisit date), escalation, or incomplete.", status: "built" },
       { text: "Dedupe a dropped call followed by a redial; compute per-call cost; queue the CRM write with retries so a HubSpot outage never loses a call.", status: "built" },
-      { text: "Reply to Vaani within its 5-second limit, then process in the background.", status: "planned" },
+      { text: "Reply to Vaani within its 5-second limit, then process in the background; a sweeper re-runs any call that got stuck.", status: "built" },
     ],
   },
   {
@@ -75,7 +75,7 @@ export const COMPONENTS_MAP: MapColumn[] = [
     items: [
       { text: "Caller: answered at once, any hour; no price ever quoted, a free consultation offered instead.", status: "assumed" },
       { text: "HubSpot (Nikhil's main workspace): a contact, a deal in the 'Aangan Enquiries' pipeline (estimated value on qualified leads only), a handoff note, and tasks (callback, revisit, urgent escalation).", status: "built" },
-      { text: "Email (Resend): the on-duty designers get the handoff note and a claim link. First to claim becomes the HubSpot deal owner and confirms the visit; unclaimed after 15 minutes, it is auto-assigned and Nikhil is alerted. After-hours leads wait until 10:00 IST. Nikhil is also emailed on VIP, complaint and unclaimed leads.", status: "planned" },
+      { text: "Email (Resend): the on-duty designers get the handoff note and a claim link. First to claim becomes the HubSpot deal owner and confirms the visit; unclaimed after 15 minutes, it is auto-assigned and Nikhil is alerted. After-hours leads wait until 10:00 IST. Nikhil is also emailed on VIP, complaint and unclaimed leads. A background job runs every minute.", status: "built" },
       { text: "Founder: HubSpot reports for pipeline and cost vs value, plus a thin console for declined-lead review, costs and replay tests.", status: "planned" },
     ],
   },

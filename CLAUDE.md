@@ -1,6 +1,6 @@
 # MESA Case 03 — Aangan Studio: Unanswered Enquiries (phone only)
 
-Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: BUILDING. Phase 1, 2A (HubSpot foundation) and 2B (pipeline + Replay Lab) built; real-portal HubSpot smoke test and Phase 3 (notify + claim) next.
+Course: MESA "AI and its Application", Cohort C4. Builder: Lopa. Status: BUILDING. Phases 1, 2A, 2B and 3 (notify + claim) built and live-tested; next: a real Vaani payload and test call, Phase 4 console, Phase 5 voice pack.
 Update the "Decisions" section below as choices are made. Never put API keys in this file.
 
 ## The case in brief
@@ -145,6 +145,11 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 
 ## Public repo decision (Lopa, 10 Oct 2026)
 - The GitHub repo is PUBLIC for submission and still contains source/pricing.md (internal pricing guide) and the anonymised transcripts. Lopa decided to leave them. The Cut still holds: no pricing number appears in the app, the AI prompt, the site or the voice-agent pack (tests check this).
+
+## Phase 3 status (11 Oct 2026)
+- Live: Resend emails, claim page and API, first-claim-wins, auto-assign after 15 working minutes, Nikhil alerts, fast webhook reply, sweeper, and an every-minute Supabase pg_cron job ('aangan-tick') calling /api/cron/tick on Vercel. All env vars are set on Vercel.
+- Only ONE HubSpot user exists (the free plan allows 2), so the single designer is Lopa herself; Nikhil's alert address is the same inbox. Resend's test sender delivers only to the account owner's address.
+- The timer secret appeared in a screenshot shared in chat; rotate CRON_SECRET (.env.local, Vercel, re-run the cron SQL) before real use.
 
 ## Still open
 - HubSpot account: which plan, and its real limits (users, custom properties, dashboards). Lopa to paste Usage & Limits.
