@@ -1,16 +1,25 @@
 import { parseVaaniPayload, PayloadError, type NormalizedCall } from "@/lib/vaani/adapter";
 import { SIGNATURE_HEADER, verifySignature } from "@/lib/vaani/signature";
-import type { ProcessOutcome } from "./process-call";
+
+export interface Accepted {
+  callId: string;
+  duplicate: boolean;
+  /** The slow part (AI, rules, queueing). Runs AFTER the reply, so Vaani's 5-second limit is never at risk. */
+  process: () => Promise<unknown>;
+}
 
 export interface WebhookDeps {
   secret: string;
-  process: (call: NormalizedCall, opts: { rawPayload: unknown }) => Promise<ProcessOutcome>;
+  /** Stores the call (one fast write). If this throws, we answer 500 and Vaani retries. */
+  accept: (call: NormalizedCall, opts: { rawPayload: unknown }) => Promise<Accepted>;
+  /** Runs work after the response (Next's after()). Failures are caught: a stored-but-unprocessed call is swept up later. */
+  schedule: (work: () => Promise<unknown>) => void;
 }
 
 const json = (body: unknown, status: number) => Response.json(body, { status });
 
 /**
- * POST handler logic for Vaani's end-of-call webhook. Kept separate from the Next route so it can be tested directly.
+ * POST handler logic for Vaani's end-of-call webhook. Verify, parse, store, reply 200, then process in the background.
  * Responses never echo the payload, the secret or internal error text.
  */
 export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promise<Response> {
@@ -31,12 +40,20 @@ export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promi
     if (e instanceof PayloadError) return json({ error: e.message }, 400);
     throw e;
   }
+  let accepted: Accepted;
   try {
-    const out = await deps.process(call, { rawPayload: body });
-    return json(out.status === "duplicate" ? { status: "duplicate", callId: out.callId } : { status: "processed", callId: out.callId, decision: out.decision }, 200);
+    accepted = await deps.accept(call, { rawPayload: body });
   } catch (e) {
-    console.error("[vaani-webhook] processing failed:", e instanceof Error ? e.name : "unknown");
-    // 500 so Vaani retries; the pipeline is idempotent on the call id, and a failed call is reprocessed.
-    return json({ error: "processing failed, please retry" }, 500);
+    console.error("[vaani-webhook] could not store the call:", e instanceof Error ? e.name : "unknown");
+    return json({ error: "could not store the call, please retry" }, 500);
   }
+  if (accepted.duplicate) return json({ status: "duplicate", callId: accepted.callId }, 200);
+  deps.schedule(async () => {
+    try {
+      await accepted.process();
+    } catch (e) {
+      console.error("[vaani-webhook] processing failed (will be retried by the sweeper):", e instanceof Error ? e.name : "unknown");
+    }
+  });
+  return json({ status: "accepted", callId: accepted.callId }, 200);
 }

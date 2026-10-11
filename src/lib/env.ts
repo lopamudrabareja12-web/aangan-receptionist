@@ -12,6 +12,7 @@ const serverSchema = z.object({
   VAANI_WEBHOOK_SECRET: z.string().min(1),
   APP_BASE_URL: z.string().url(),
   CRON_SECRET: z.string().min(1),
+  CLAIM_LINK_SECRET: z.string().min(16),
   DASHBOARD_PASSWORD: z.string().min(1),
   HUBSPOT_ACCESS_TOKEN: z.string().min(1),
   HUBSPOT_PORTAL_ID: z.string().regex(/^\d+$/),

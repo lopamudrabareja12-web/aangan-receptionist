@@ -40,11 +40,27 @@ export class MockHubSpot {
       list.push(r);
       return ok({ id: r.id, properties: r.properties });
     };
+    // every filter in the first group must match (AND), like HubSpot
+    const value = (r: Rec, prop: string): string => {
+      if (prop === "hs_is_closed") {
+        const k = this.stageKeyOf(r.properties.dealstage);
+        return String(k === "won" || k === "lost");
+      }
+      return String(r.properties[prop]);
+    };
     const search = (list: Rec[]) => {
-      const f = body.filterGroups?.[0]?.filters?.[0];
-      const hits = list.filter((r) => String(r.properties[f.propertyName]) === String(f.value));
+      const filters: { propertyName: string; value: string }[] = body.filterGroups?.[0]?.filters ?? [];
+      const hits = list.filter((r) => filters.every((f) => value(r, f.propertyName) === String(f.value)));
       return ok({ total: hits.length, results: hits.slice(0, 1).map((r) => ({ id: r.id, properties: r.properties })) });
     };
+
+    const dealMatch = /^\/crm\/v3\/objects\/deals\/(\d+)$/.exec(u.pathname);
+    if (dealMatch) {
+      const deal = this.deals.find((d) => d.id === dealMatch[1]);
+      if (!deal) return new Response(JSON.stringify({ message: "deal not found" }), { status: 404 });
+      if (method === "PATCH") Object.assign(deal.properties, body.properties ?? {});
+      return ok({ id: deal.id, properties: deal.properties });
+    }
 
     switch (`${method} ${u.pathname}`) {
       case "GET /crm/v3/pipelines/deals":

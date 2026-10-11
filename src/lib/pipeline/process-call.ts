@@ -1,6 +1,6 @@
 import { normalizePhone } from "@/lib/phone";
 import type { DealInput } from "@/lib/hubspot/deal-mapping";
-import type { NormalizedCall } from "@/lib/vaani/adapter";
+import { parseVaaniPayload, type NormalizedCall } from "@/lib/vaani/adapter";
 import { istMorning, nextWorkingStart } from "@/lib/time";
 import { computeCallCost } from "./costs";
 import type { Extractor } from "./extractor";
@@ -8,7 +8,7 @@ import type { Extraction } from "./extraction-schema";
 import { composeHandoffNote } from "./handoff";
 import { guessCallerName, redactForLlm } from "./redact";
 import { applyRubric, istDate, RUBRIC_VERSION, type RubricResult } from "./rubric";
-import type { PipelineStore, RecentCall } from "./store";
+import type { CallRecord, PipelineStore, RecentCall } from "./store";
 import type { SyncPayload } from "./sync";
 
 export const DEDUPE_WINDOW_MS = 10 * 60_000;
@@ -29,21 +29,47 @@ export type ProcessOutcome =
 const callerWordCount = (t: string) =>
   t.split("\n").filter((l) => /^caller:/i.test(l)).reduce((n, l) => n + l.replace(/^caller:/i, "").trim().split(/\s+/).filter(Boolean).length, 0);
 
+/** Step 1: store the call. Fast (one write), so the webhook can answer Vaani within its 5-second limit. */
+export async function receiveCall(
+  store: PipelineStore,
+  call: NormalizedCall,
+  opts: { rawPayload?: unknown; isHistorical?: boolean } = {},
+): Promise<{ call: CallRecord; created: boolean; duplicate: boolean }> {
+  const phone = normalizePhone(call.callerNumber);
+  const { call: row, created } = await store.insertCall({
+    vaaniCallId: call.vaaniCallId, callerNumber: phone ?? call.callerNumber, startedAt: call.startedAt, durationSec: call.durationSec,
+    language: call.language, transcript: call.transcript, rawPayload: opts.rawPayload ?? null, isHistorical: opts.isHistorical ?? false,
+  });
+  // A webhook delivered twice must do nothing the second time. A previously FAILED or stuck call is picked up again.
+  return { call: row, created, duplicate: !created && (row.status === "processed" || row.status === "processing") };
+}
+
+/** Rebuilds the normalised call from what was stored, so a stuck call can be reprocessed later. */
+export function callFromRecord(row: CallRecord): NormalizedCall {
+  let name: string | null = null;
+  try {
+    name = parseVaaniPayload(row.rawPayload).callerName;
+  } catch {
+    /* the stored payload is not in the expected shape: carry on without a platform-supplied name */
+  }
+  return { vaaniCallId: row.vaaniCallId, callerNumber: row.callerNumber, startedAt: row.startedAt, durationSec: row.durationSec, language: row.language, callerName: name, transcript: row.transcript };
+}
+
 export async function processCall(
   deps: ProcessDeps,
   call: NormalizedCall,
   opts: { rawPayload?: unknown; isHistorical?: boolean } = {},
 ): Promise<ProcessOutcome> {
+  const received = await receiveCall(deps.store, call, opts);
+  if (received.duplicate) return { status: "duplicate", callId: received.call.id };
+  return processReceived(deps, received.call, call);
+}
+
+/** Step 2: read, decide, save, queue. Slow (AI call), so it runs after the webhook has already replied. */
+export async function processReceived(deps: ProcessDeps, row: CallRecord, call: NormalizedCall): Promise<ProcessOutcome> {
   const { store, extractor } = deps;
   const now = (deps.now ?? (() => new Date()))();
   const phone = normalizePhone(call.callerNumber);
-
-  const { call: row, created } = await store.insertCall({
-    vaaniCallId: call.vaaniCallId, callerNumber: phone ?? call.callerNumber, startedAt: call.startedAt, durationSec: call.durationSec,
-    language: call.language, transcript: call.transcript, rawPayload: opts.rawPayload ?? null, isHistorical: opts.isHistorical ?? false,
-  });
-  // A webhook that is delivered twice must do nothing the second time. A previously FAILED call is retried.
-  if (!created && (row.status === "processed" || row.status === "processing")) return { status: "duplicate", callId: row.id };
   await store.setCallStatus(row.id, "processing");
 
   try {
@@ -101,6 +127,17 @@ export async function processCall(
     };
     const hold = rubric.decision === "incomplete" ? new Date(call.startedAt.getTime() + DEDUPE_WINDOW_MS) : now;
     await store.enqueueOutbox({ idempotencyKey: `sync_lead:${row.id}`, operation: "sync_lead", leadId: lead.id, payload, runAfter: hold });
+
+    // Who needs to be told: designers for a forwarded lead (claim), Nikhil at once for a complaint.
+    if (rubric.decision === "qualified" || rubric.decision === "qualified_flagged" || rubric.decision === "escalation") {
+      const escalation = rubric.decision === "escalation";
+      const who = [callerName ?? "Unknown caller", extraction?.property_type, extraction?.location].filter(Boolean).join(" · ");
+      const prefix = escalation ? "ESCALATION" : rubric.decision === "qualified_flagged" ? "New enquiry (check the flags)" : "New enquiry";
+      await store.createAssignment({
+        leadId: lead.id, kind: escalation ? "escalation" : "claim", notifyAt: escalation ? now : nextWorkingStart(now),
+        subject: `${prefix}: ${who}`, noteText: note.text, noteHtml: note.html, isVip: rubric.flags.includes("vip"),
+      });
+    }
 
     await store.setCallStatus(row.id, "processed");
     return { status: "processed", callId: row.id, leadId: lead.id, decision: rubric.decision, reasonCode: rubric.reasonCode, supersededLeadIds: superseded };

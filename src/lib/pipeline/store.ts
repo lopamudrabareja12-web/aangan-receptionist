@@ -5,6 +5,7 @@ import type { RubricResult } from "./rubric";
 
 export interface Settings extends CostRates {
   avg_project_value_inr: number;
+  claim_timeout_minutes: number;
 }
 
 export interface CallRecord {
@@ -58,6 +59,35 @@ export interface OutboxRow {
   lastError: string | null;
 }
 
+export type AssignmentStatus = "awaiting_notify" | "notified" | "claimed" | "auto_assigned";
+
+export interface Assignment {
+  leadId: string;
+  kind: "claim" | "escalation";
+  status: AssignmentStatus;
+  notifyAt: Date;
+  notifiedAt: Date | null;
+  claimDeadline: Date | null;
+  designerId: string | null;
+  claimedAt: Date | null;
+  via: "claim" | "auto" | null;
+  nikhilAlertedAt: Date | null;
+  subject: string;
+  noteText: string;
+  noteHtml: string;
+  isVip: boolean;
+  hubspotDealId: string | null; // from the lead
+}
+
+export interface Designer {
+  id: string;
+  name: string;
+  email: string;
+  onDuty: boolean;
+  isSenior: boolean;
+  hubspotOwnerId: string | null;
+}
+
 export interface RecentCall {
   callId: string;
   startedAt: Date;
@@ -84,5 +114,20 @@ export interface PipelineStore {
   completeOutbox(id: string, now: Date): Promise<void>;
   failOutbox(id: string, error: string, nextAttemptAt: Date | null, now: Date): Promise<void>; // null => dead
   setLeadHubspotIds(leadId: string, ids: { contactId: string | null; dealId: string | null }): Promise<void>;
+  // --- Phase 3: notify and claim ---
+  createAssignment(a: { leadId: string; kind: "claim" | "escalation"; notifyAt: Date; subject: string; noteText: string; noteHtml: string; isVip: boolean }): Promise<void>;
+  getAssignment(leadId: string): Promise<Assignment | null>;
+  /** Assignments whose email time has come AND whose HubSpot deal exists (escalations need no deal). */
+  listDueNotifications(now: Date): Promise<Assignment[]>;
+  /** Claims that were emailed but nobody took before the deadline. */
+  listOverdueClaims(now: Date): Promise<Assignment[]>;
+  markNotified(leadId: string, now: Date, claimDeadline: Date | null): Promise<boolean>;
+  /** Atomic: only the first caller wins. Returns true if THIS call took the lead. */
+  claimLead(leadId: string, designerId: string, via: "claim" | "auto", now: Date): Promise<boolean>;
+  markNikhilAlerted(leadId: string, now: Date): Promise<void>;
+  listDesigners(): Promise<Designer[]>;
+  listEvents(leadId: string, eventType: string): Promise<{ detail: unknown }[]>;
+  /** Calls stuck in received/processing/failed for longer than `olderThan`, oldest first. */
+  listStaleCalls(olderThan: Date, limit: number): Promise<CallRecord[]>;
   logSync(entry: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }): Promise<void>;
 }

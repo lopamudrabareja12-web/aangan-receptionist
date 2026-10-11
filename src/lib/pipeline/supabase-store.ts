@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Decision } from "@/lib/domain";
 import type { CallCost } from "./costs";
-import type { CallRecord, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, CallRecord, Designer, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 // Production store. NOTE: typechecked and written against the schema in supabase/migrations, but only exercised
 // against a real Supabase project at the smoke test (the in-memory store covers all pipeline logic in tests).
@@ -27,7 +27,7 @@ export class SupabaseStore implements PipelineStore {
     const r = must(await this.db.from("settings").select("*").eq("id", 1).single(), "read settings");
     return {
       voice_rate_inr_per_min: Number(r.voice_rate_inr_per_min), gemini_input_usd_per_m: Number(r.gemini_input_usd_per_m),
-      gemini_output_usd_per_m: Number(r.gemini_output_usd_per_m), usd_inr: Number(r.usd_inr), avg_project_value_inr: Number(r.avg_project_value_inr),
+      gemini_output_usd_per_m: Number(r.gemini_output_usd_per_m), usd_inr: Number(r.usd_inr), avg_project_value_inr: Number(r.avg_project_value_inr), claim_timeout_minutes: Number(r.claim_timeout_minutes),
     };
   }
 
@@ -166,5 +166,89 @@ export class SupabaseStore implements PipelineStore {
       await this.db.from("hubspot_sync_log").insert({ outbox_id: e.outboxId, lead_id: e.leadId, operation: e.operation, ok: e.ok, http_status: e.httpStatus ?? null, detail: e.detail ?? null }),
       "log sync",
     );
+  }
+
+  // --- Phase 3: notify and claim ---
+  private toAssignment(r: Record<string, unknown>): Assignment {
+    const d = (v: unknown) => (v ? new Date(v as string) : null);
+    const lead = r.leads as { hubspot_deal_id: string | null } | null;
+    return {
+      leadId: r.lead_id as string, kind: r.kind as Assignment["kind"], status: r.status as Assignment["status"], notifyAt: new Date(r.notify_at as string),
+      notifiedAt: d(r.notified_at), claimDeadline: d(r.claim_deadline), designerId: (r.designer_id as string) ?? null, claimedAt: d(r.claimed_at),
+      via: (r.via as Assignment["via"]) ?? null, nikhilAlertedAt: d(r.nikhil_alerted_at), subject: r.subject as string, noteText: r.note_text as string,
+      noteHtml: r.note_html as string, isVip: r.is_vip as boolean, hubspotDealId: lead?.hubspot_deal_id ?? null,
+    };
+  }
+
+  async createAssignment(a: { leadId: string; kind: "claim" | "escalation"; notifyAt: Date; subject: string; noteText: string; noteHtml: string; isVip: boolean }) {
+    must(
+      await this.db.from("lead_assignments").upsert(
+        { lead_id: a.leadId, kind: a.kind, notify_at: a.notifyAt.toISOString(), subject: a.subject, note_text: a.noteText, note_html: a.noteHtml, is_vip: a.isVip },
+        { onConflict: "lead_id", ignoreDuplicates: true },
+      ),
+      "create assignment",
+    );
+  }
+
+  async getAssignment(leadId: string) {
+    const r = must(await this.db.from("lead_assignments").select("*, leads(hubspot_deal_id)").eq("lead_id", leadId).maybeSingle(), "get assignment");
+    return r ? this.toAssignment(r as Record<string, unknown>) : null;
+  }
+
+  async listDueNotifications(now: Date) {
+    const rows = must(
+      await this.db.from("lead_assignments").select("*, leads(hubspot_deal_id)").eq("status", "awaiting_notify").lte("notify_at", now.toISOString()).order("notify_at"),
+      "due notifications",
+    ) as Record<string, unknown>[];
+    return rows.map((r) => this.toAssignment(r)).filter((a) => a.kind === "escalation" || a.hubspotDealId !== null);
+  }
+
+  async listOverdueClaims(now: Date) {
+    const rows = must(
+      await this.db.from("lead_assignments").select("*, leads(hubspot_deal_id)").eq("kind", "claim").eq("status", "notified").lte("claim_deadline", now.toISOString()),
+      "overdue claims",
+    ) as Record<string, unknown>[];
+    return rows.map((r) => this.toAssignment(r));
+  }
+
+  async markNotified(leadId: string, now: Date, claimDeadline: Date | null) {
+    const got = must(
+      await this.db.from("lead_assignments").update({ status: "notified", notified_at: now.toISOString(), claim_deadline: claimDeadline?.toISOString() ?? null })
+        .eq("lead_id", leadId).eq("status", "awaiting_notify").select("lead_id"),
+      "mark notified",
+    ) as unknown[];
+    return got.length === 1;
+  }
+
+  /** One conditional UPDATE: Postgres applies it to a single row once, so the first caller wins. */
+  async claimLead(leadId: string, designerId: string, via: "claim" | "auto", now: Date) {
+    const got = must(
+      await this.db.from("lead_assignments").update({ status: via === "auto" ? "auto_assigned" : "claimed", designer_id: designerId, claimed_at: now.toISOString(), via })
+        .eq("lead_id", leadId).eq("kind", "claim").in("status", ["awaiting_notify", "notified"]).select("lead_id"),
+      "claim lead",
+    ) as unknown[];
+    return got.length === 1;
+  }
+
+  async markNikhilAlerted(leadId: string, now: Date) {
+    must(await this.db.from("lead_assignments").update({ nikhil_alerted_at: now.toISOString() }).eq("lead_id", leadId), "mark alerted");
+  }
+
+  async listDesigners(): Promise<Designer[]> {
+    const rows = must(await this.db.from("designers").select("*"), "list designers") as Record<string, unknown>[];
+    return rows.map((r) => ({ id: r.id as string, name: r.name as string, email: r.email as string, onDuty: r.on_duty as boolean, isSenior: r.is_senior as boolean, hubspotOwnerId: (r.hubspot_owner_id as string) ?? null }));
+  }
+
+  async listEvents(leadId: string, eventType: string) {
+    const rows = must(await this.db.from("lead_events").select("detail").eq("lead_id", leadId).eq("event_type", eventType), "list events") as { detail: unknown }[];
+    return rows;
+  }
+
+  async listStaleCalls(olderThan: Date, limit: number): Promise<CallRecord[]> {
+    const rows = must(
+      await this.db.from("calls").select("*").in("status", ["received", "processing", "failed"]).lte("created_at", olderThan.toISOString()).order("created_at").limit(limit),
+      "stale calls",
+    ) as CallRow[];
+    return rows.map(toCall);
   }
 }

@@ -84,7 +84,7 @@ describe("schema", () => {
       `select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
        where n.nspname = 'public' and c.relkind = 'r'`,
     );
-    expect(r.rows.length).toBe(8);
+    expect(r.rows.length).toBe(9);
     expect(r.rows.every((x) => x.relrowsecurity)).toBe(true);
   });
 
@@ -129,5 +129,23 @@ describe("schema", () => {
     await db.query("update leads set superseded_by_call_id = $1", [c.rows[0].id]);
     const r = await db.query<{ superseded_by_call_id: string }>("select superseded_by_call_id from leads");
     expect(r.rows[0].superseded_by_call_id).toBe(c.rows[0].id);
+  });
+
+  it("migration 0004: one assignment per lead, a kind check, and a claim that only the first caller can win", async () => {
+    const c = await db.query<{ id: string }>("select id from calls where vaani_call_id = 'call-1'");
+    const lead = await db.query<{ id: string }>("select id from leads where call_id = $1", [c.rows[0].id]);
+    const leadId = lead.rows[0].id;
+    await db.query("insert into lead_assignments (lead_id, notify_at, subject, note_text, note_html) values ($1, now(), 's', 't', '<p>t</p>')", [leadId]);
+    await expect(db.query("insert into lead_assignments (lead_id, notify_at, subject, note_text, note_html) values ($1, now(), 's', 't', 't')", [leadId])).rejects.toThrow();
+    await expect(db.query("update lead_assignments set kind = 'banana' where lead_id = $1", [leadId])).rejects.toThrow();
+    const d = await db.query<{ id: string }>("select id from designers order by email");
+    const claim = (designer: string) => db.query(
+      "update lead_assignments set status = 'claimed', designer_id = $2, claimed_at = now(), via = 'claim' where lead_id = $1 and kind = 'claim' and status in ('awaiting_notify','notified') returning lead_id",
+      [leadId, designer],
+    );
+    expect((await claim(d.rows[0].id)).rows).toHaveLength(1); // first wins
+    expect((await claim(d.rows[1].id)).rows).toHaveLength(0); // second changes nothing
+    const owner = await db.query<{ designer_id: string }>("select designer_id from lead_assignments where lead_id = $1", [leadId]);
+    expect(owner.rows[0].designer_id).toBe(d.rows[0].id);
   });
 });

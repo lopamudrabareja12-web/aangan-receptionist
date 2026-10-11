@@ -142,3 +142,26 @@ export async function resolveStageIds(
   if (missing.length) throw new Error(`HubSpot pipeline is missing stages: ${missing.join(", ")}. Run: npm run hubspot:setup`);
   return { pipelineId: pipeline.id, stageIds };
 }
+
+/** Current stage id of a deal. */
+export async function getDealStage(c: HubSpotClient, dealId: string): Promise<string | null> {
+  const r = await c.request<{ properties: Record<string, string | null> }>("GET", `${PATHS.deals}/${dealId}?properties=dealstage`);
+  return r.properties.dealstage ?? null;
+}
+
+/** Number of OPEN deals an owner has in the Aangan pipeline. HubSpot is the source of truth for who owns what. */
+export async function countOpenDeals(c: HubSpotClient, ownerId: string, pipelineId: string): Promise<number> {
+  const r = await c.request<{ total: number }>("POST", PATHS.dealsSearch, {
+    filterGroups: [
+      {
+        filters: [
+          { propertyName: "hubspot_owner_id", operator: "EQ", value: ownerId },
+          { propertyName: "pipeline", operator: "EQ", value: pipelineId },
+          { propertyName: "hs_is_closed", operator: "EQ", value: "false" },
+        ],
+      },
+    ],
+    limit: 1,
+  });
+  return r.total;
+}

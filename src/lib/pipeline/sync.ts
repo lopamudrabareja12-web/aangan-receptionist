@@ -5,6 +5,7 @@ import { addNote, createTask, resolveStageIds, upsertContact, upsertDeal } from 
 import { buildDealProperties, stageForDecision, type DealInput } from "@/lib/hubspot/deal-mapping";
 import { PIPELINE_LABEL } from "@/lib/hubspot/stages";
 import { normalizePhone } from "@/lib/phone";
+import { applyClaim, type ClaimPayload } from "./claim-deal";
 import type { OutboxRow, PipelineStore } from "./store";
 
 export interface SyncProgress {
@@ -83,16 +84,30 @@ export async function runOutbox(deps: { store: PipelineStore; client: HubSpotCli
   return out;
 
   async function processRow(row: OutboxRow) {
-    const payload = row.payload as SyncPayload;
+    const payload = row.payload as SyncPayload | ClaimPayload;
+    const leadId = payload.leadId;
     try {
-      const progress = await syncLead(client, payload, async (p) => {
-        payload.progress = p;
-        await store.updateOutboxPayload(row.id, payload);
-      });
-      await store.setLeadHubspotIds(payload.leadId, { contactId: progress.contactId ?? null, dealId: progress.dealId ?? null });
+      let detail: Record<string, unknown>;
+      if (row.operation === "claim_deal") {
+        const p = payload as ClaimPayload;
+        await applyClaim(client, p, async (progress) => {
+          p.progress = progress;
+          await store.updateOutboxPayload(row.id, p);
+        });
+        detail = { dealId: p.dealId, ownerId: p.ownerId, via: p.via };
+        await store.addEvent(leadId, "hubspot_owner_set", detail);
+      } else {
+        const p = payload as SyncPayload;
+        const progress = await syncLead(client, p, async (pr) => {
+          p.progress = pr;
+          await store.updateOutboxPayload(row.id, p);
+        });
+        await store.setLeadHubspotIds(leadId, { contactId: progress.contactId ?? null, dealId: progress.dealId ?? null });
+        detail = { dealId: progress.dealId };
+        await store.addEvent(leadId, "hubspot_synced", detail);
+      }
       await store.completeOutbox(row.id, now);
-      await store.logSync({ outboxId: row.id, leadId: payload.leadId, operation: row.operation, ok: true, detail: { dealId: progress.dealId } });
-      await store.addEvent(payload.leadId, "hubspot_synced", { dealId: progress.dealId });
+      await store.logSync({ outboxId: row.id, leadId, operation: row.operation, ok: true, detail });
       out.done++;
     } catch (e) {
       const status = e instanceof HubSpotError ? e.status : undefined;
@@ -101,7 +116,7 @@ export async function runOutbox(deps: { store: PipelineStore; client: HubSpotCli
       const dead = permanent || attempts >= MAX_ATTEMPTS;
       const message = e instanceof Error ? e.message.slice(0, 400) : "unknown error";
       await store.failOutbox(row.id, message, dead ? null : new Date(now.getTime() + retryDelayMs(attempts)), now);
-      await store.logSync({ outboxId: row.id, leadId: payload.leadId, operation: row.operation, ok: false, httpStatus: status, detail: { error: message, dead } });
+      await store.logSync({ outboxId: row.id, leadId, operation: row.operation, ok: false, httpStatus: status, detail: { error: message, dead } });
       if (dead) out.dead++;
       else out.retried++;
     }

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CallCost } from "./costs";
 import { DEFAULT_RATES } from "./costs";
-import type { CallRecord, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, CallRecord, Designer, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 /** In-memory PipelineStore for tests and the Replay Lab. Nothing here touches Supabase or HubSpot. */
 export class MemoryStore implements PipelineStore {
@@ -11,8 +11,10 @@ export class MemoryStore implements PipelineStore {
   outbox = new Map<string, OutboxRow>();
   syncLog: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }[] = [];
   callErrors = new Map<string, string>();
+  assignments = new Map<string, Assignment>();
+  designers: Designer[] = [];
 
-  constructor(private settings: Settings = { ...DEFAULT_RATES, avg_project_value_inr: 1_100_000 }) {}
+  constructor(private settings: Settings = { ...DEFAULT_RATES, avg_project_value_inr: 1_100_000, claim_timeout_minutes: 15 }) {}
 
   async getSettings() {
     return this.settings;
@@ -103,5 +105,75 @@ export class MemoryStore implements PipelineStore {
 
   async logSync(e: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }) {
     this.syncLog.push(e);
+  }
+
+  // --- Phase 3 ---
+  async createAssignment(a: { leadId: string; kind: "claim" | "escalation"; notifyAt: Date; subject: string; noteText: string; noteHtml: string; isVip: boolean }) {
+    if (this.assignments.has(a.leadId)) return;
+    this.assignments.set(a.leadId, {
+      leadId: a.leadId, kind: a.kind, status: "awaiting_notify", notifyAt: a.notifyAt, notifiedAt: null, claimDeadline: null, designerId: null,
+      claimedAt: null, via: null, nikhilAlertedAt: null, subject: a.subject, noteText: a.noteText, noteHtml: a.noteHtml, isVip: a.isVip, hubspotDealId: null,
+    });
+  }
+
+  private withDeal(a: Assignment): Assignment {
+    return { ...a, hubspotDealId: this.leads.get(a.leadId)?.hubspotDealId ?? null };
+  }
+
+  async getAssignment(leadId: string) {
+    const a = this.assignments.get(leadId);
+    return a ? this.withDeal(a) : null;
+  }
+
+  async listDueNotifications(now: Date) {
+    return [...this.assignments.values()]
+      .filter((a) => a.status === "awaiting_notify" && a.notifyAt <= now)
+      .map((a) => this.withDeal(a))
+      .filter((a) => a.kind === "escalation" || a.hubspotDealId !== null);
+  }
+
+  async listOverdueClaims(now: Date) {
+    return [...this.assignments.values()]
+      .filter((a) => a.kind === "claim" && a.status === "notified" && a.claimDeadline !== null && a.claimDeadline <= now)
+      .map((a) => this.withDeal(a));
+  }
+
+  async markNotified(leadId: string, now: Date, claimDeadline: Date | null) {
+    const a = this.assignments.get(leadId);
+    if (!a || a.status !== "awaiting_notify") return false;
+    a.status = "notified";
+    a.notifiedAt = now;
+    a.claimDeadline = claimDeadline;
+    return true;
+  }
+
+  async claimLead(leadId: string, designerId: string, via: "claim" | "auto", now: Date) {
+    const a = this.assignments.get(leadId);
+    if (!a || a.kind !== "claim" || (a.status !== "awaiting_notify" && a.status !== "notified")) return false;
+    a.status = via === "auto" ? "auto_assigned" : "claimed";
+    a.designerId = designerId;
+    a.claimedAt = now;
+    a.via = via;
+    return true;
+  }
+
+  async markNikhilAlerted(leadId: string, now: Date) {
+    const a = this.assignments.get(leadId);
+    if (a) a.nikhilAlertedAt = now;
+  }
+
+  async listDesigners() {
+    return this.designers.map((d) => ({ ...d }));
+  }
+
+  async listEvents(leadId: string, eventType: string) {
+    return this.events.filter((e) => e.leadId === leadId && e.eventType === eventType).map((e) => ({ detail: e.detail }));
+  }
+
+  async listStaleCalls(olderThan: Date, limit: number) {
+    return [...this.calls.values()]
+      .filter((c) => (c.status === "received" || c.status === "processing" || c.status === "failed") && c.startedAt <= olderThan)
+      .sort((x, y) => x.startedAt.getTime() - y.startedAt.getTime())
+      .slice(0, limit);
   }
 }

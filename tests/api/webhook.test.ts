@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { handleVaaniWebhook } from "@/lib/pipeline/webhook-handler";
 import { MemoryStore } from "@/lib/pipeline/memory-store";
-import { processCall } from "@/lib/pipeline/process-call";
+import { processReceived, receiveCall } from "@/lib/pipeline/process-call";
 import { GoldenExtractor } from "@/replay/golden";
 import { parseVaaniPayload, PayloadError } from "@/lib/vaani/adapter";
 import { SIGNATURE_HEADER, sign, verifySignature } from "@/lib/vaani/signature";
@@ -15,10 +15,18 @@ const setup = () => {
   const store = new MemoryStore();
   const golden = new GoldenExtractor();
   golden.current = "T01";
-  const process = (call: Parameters<typeof processCall>[1], opts: { rawPayload: unknown }) => processCall({ store, extractor: golden }, call, opts);
-  const post = (body: string, sig: string | null) =>
-    handleVaaniWebhook(new Request("http://localhost/api/webhooks/vaani", { method: "POST", body, headers: sig === null ? {} : { [SIGNATURE_HEADER]: sig } }), { secret: SECRET, process });
-  return { store, post };
+  const scheduled: (() => Promise<unknown>)[] = [];
+  const order: string[] = [];
+  const accept = async (call: Parameters<typeof receiveCall>[1], opts: { rawPayload: unknown }) => {
+    const r = await receiveCall(store, call, opts);
+    order.push("stored");
+    return { callId: r.call.id, duplicate: r.duplicate, process: async () => { order.push("processing"); await processReceived({ store, extractor: golden }, r.call, call); } };
+  };
+  const post = (body: string, sig: string | null, over: Partial<Parameters<typeof handleVaaniWebhook>[1]> = {}) =>
+    handleVaaniWebhook(new Request("http://localhost/api/webhooks/vaani", { method: "POST", body, headers: sig === null ? {} : { [SIGNATURE_HEADER]: sig } }), {
+      secret: SECRET, accept, schedule: (w) => void scheduled.push(w), ...over,
+    });
+  return { store, post, scheduled, order };
 };
 
 describe("signature", () => {
@@ -51,11 +59,12 @@ describe("adapter (against the FAKE fixture)", () => {
 });
 
 describe("POST /api/webhooks/vaani (handler)", () => {
-  it("401 for a missing or wrong signature, and nothing is stored", async () => {
-    const { store, post } = setup();
+  it("401 for a missing or wrong signature, and nothing is stored or scheduled", async () => {
+    const { store, post, scheduled } = setup();
     expect((await post(fixture, null)).status).toBe(401);
     expect((await post(fixture, "deadbeef")).status).toBe(401);
     expect(store.calls.size).toBe(0);
+    expect(scheduled).toHaveLength(0);
   });
   it("400 for a signed body that is not JSON or not a call", async () => {
     const { post } = setup();
@@ -63,22 +72,45 @@ describe("POST /api/webhooks/vaani (handler)", () => {
     const odd = JSON.stringify({ hello: "world" });
     expect((await post(odd, sign(odd, SECRET))).status).toBe(400);
   });
-  it("200 processes a signed call, and a second delivery is a harmless duplicate", async () => {
-    const { store, post } = setup();
-    const first = await post(fixture, sign(fixture, SECRET));
-    expect(first.status).toBe(200);
-    expect(await first.json()).toMatchObject({ status: "processed", decision: "qualified" });
+  it("replies 200 'accepted' BEFORE the slow work runs (Vaani allows only 5 seconds)", async () => {
+    const { store, post, scheduled, order } = setup();
+    const res = await post(fixture, sign(fixture, SECRET));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ status: "accepted" });
+    expect(order).toEqual(["stored"]); // processing has NOT started when the reply is ready
+    expect([...store.calls.values()][0].status).toBe("received"); // but the call is already safely stored
+    expect(store.leads.size).toBe(0);
+    await scheduled[0]();
+    expect(order).toEqual(["stored", "processing"]);
+    expect(store.leads.size).toBe(1);
+    expect([...store.calls.values()][0].status).toBe("processed");
+  });
+  it("a second delivery of the same call is a harmless duplicate: nothing more is scheduled", async () => {
+    const { store, post, scheduled } = setup();
+    await post(fixture, sign(fixture, SECRET));
+    await scheduled[0]();
     const second = await post(fixture, sign(fixture, SECRET));
     expect(await second.json()).toMatchObject({ status: "duplicate" });
+    expect(scheduled).toHaveLength(1);
     expect(store.leads.size).toBe(1);
   });
-  it("500 (so Vaani retries) when processing fails, without leaking internals", async () => {
-    const store = new MemoryStore();
-    const boom = { extract: async () => { throw new Error("secret internal detail GEMINI_API_KEY=abc"); } };
-    const res = await handleVaaniWebhook(new Request("http://x", { method: "POST", body: fixture, headers: { [SIGNATURE_HEADER]: sign(fixture, SECRET) } }), {
-      secret: SECRET, process: (c, o) => processCall({ store, extractor: boom }, c, o),
-    });
+  it("500 (so Vaani retries) only when the call could not even be stored", async () => {
+    const { post, scheduled } = setup();
+    const res = await post(fixture, sign(fixture, SECRET), { accept: async () => { throw new Error("db down, secret detail"); } });
     expect(res.status).toBe(500);
-    expect(await res.text()).not.toMatch(/secret internal|GEMINI/);
+    expect(await res.text()).not.toMatch(/secret detail|db down/);
+    expect(scheduled).toHaveLength(0);
+  });
+  it("a failure in the background work does not crash anything and leaves the call for the sweeper", async () => {
+    const { store, post, scheduled } = setup();
+    const boom = { extract: async () => { throw new Error("model down"); } };
+    await post(fixture, sign(fixture, SECRET), {
+      accept: async (call, opts) => {
+        const r = await receiveCall(store, call, opts);
+        return { callId: r.call.id, duplicate: false, process: () => processReceived({ store, extractor: boom }, r.call, call) };
+      },
+    });
+    await expect(scheduled[0]()).resolves.toBeUndefined(); // the wrapper swallows and logs, never throws
+    expect([...store.calls.values()][0].status).toBe("failed");
   });
 });
