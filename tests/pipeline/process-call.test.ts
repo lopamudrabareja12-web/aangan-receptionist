@@ -135,4 +135,10 @@ describe("processCall", () => {
     expect(html).toContain("+919000000001");
     expect(html).toContain("Kothrud");
   });
+
+  it("stores a decimal call duration as whole seconds (the database column is an integer)", async () => {
+    const { store, deps } = setup();
+    await processCall(deps("T01"), norm("T01", { durationSec: 65.152 }));
+    expect([...store.calls.values()][0].durationSec).toBe(65);
+  });
 });

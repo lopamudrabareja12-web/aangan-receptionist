@@ -60,7 +60,8 @@ const str = (v: unknown): string | null => (typeof v === "string" && v.trim() ? 
  *  No real call is ever longer than 10,000 seconds (2.8 hours), so a bigger number is milliseconds. */
 export function durationToSeconds(v: unknown): number | null {
   if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return null;
-  return v > 10_000 ? v / 1000 : v;
+  // whole seconds: the database column is an integer, and Vaani sends decimals such as 65.152
+  return Math.round(v > 10_000 ? v / 1000 : v);
 }
 
 const TS_PREFIX = /^\s*[[(]?\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d+)?[\])]?\s*[-–:]?\s*/;

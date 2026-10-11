@@ -67,7 +67,7 @@ export async function handleVaaniWebhook(req: Request, deps: WebhookDeps): Promi
   try {
     accepted = await deps.accept(event.call, { rawPayload: body });
   } catch (e) {
-    console.error("[vaani-webhook] could not store the call:", e instanceof Error ? e.name : "unknown");
+    console.error("[vaani-webhook] could not store the call:", e instanceof Error ? e.message.slice(0, 300) : "unknown");
     return json({ error: "could not store the call, please retry" }, 500);
   }
   if (accepted.duplicate) return json({ status: "duplicate", callId: accepted.callId }, 200);

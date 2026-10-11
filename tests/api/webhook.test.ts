@@ -98,7 +98,9 @@ describe("Vaani events", () => {
 describe("adapter details", () => {
   it("duration: seconds stay seconds, milliseconds are converted (no call lasts over 10,000 seconds)", () => {
     expect(durationToSeconds(252)).toBe(252);
-    expect(durationToSeconds(55150)).toBeCloseTo(55.15);
+    expect(durationToSeconds(55150)).toBe(55);
+    expect(durationToSeconds(65.152)).toBe(65); // Vaani sends decimals; the database stores whole seconds
+    expect(durationToSeconds(64.5)).toBe(65);
     expect(durationToSeconds(-1)).toBeNull();
     expect(durationToSeconds("12")).toBeNull();
     expect(durationToSeconds(undefined)).toBeNull();

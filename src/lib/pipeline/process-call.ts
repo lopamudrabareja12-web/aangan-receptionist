@@ -37,7 +37,7 @@ export async function receiveCall(
 ): Promise<{ call: CallRecord; created: boolean; duplicate: boolean }> {
   const phone = normalizePhone(call.callerNumber);
   const { call: row, created } = await store.insertCall({
-    vaaniCallId: call.vaaniCallId, callerNumber: phone ?? call.callerNumber, startedAt: call.startedAt, durationSec: call.durationSec,
+    vaaniCallId: call.vaaniCallId, callerNumber: phone ?? call.callerNumber, startedAt: call.startedAt, durationSec: call.durationSec === null ? null : Math.round(call.durationSec),
     language: call.language, transcript: call.transcript, rawPayload: opts.rawPayload ?? null, isHistorical: opts.isHistorical ?? false,
   });
   // A webhook delivered twice must do nothing the second time. A previously FAILED or stuck call is picked up again.
