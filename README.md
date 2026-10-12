@@ -108,7 +108,7 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
 3. Notify and claim: email via Resend, first-claim-wins link, owner written to HubSpot, 15-minute auto-assign, every-minute job (built and tested live)
 4. Thin console + manual HubSpot report guide
 5. Voice agent pack for Vaani (built: `voice-agent/`; follow `voice-agent/SETUP.md`)
-6. Deploy and end-to-end demo
+6. Deploy and end-to-end demo (deployed on Vercel; see "How to demo" below)
 
 ## Notify and claim (Phase 3)
 
@@ -129,3 +129,52 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
 prompt-example half of the historical calls), `greeting.md`, five knowledge files, and `SETUP.md` (step by step, with eight test calls).
 `tests/voice-agent.test.ts` guards it: no figure from the internal pricing guide, no currency symbols, the exact approved pricing reply,
 the AI-and-recording greeting, one question at a time, every must-have field, the 15-minute complaint rule, and that no held-out call is used as an example.
+
+## How to demo
+
+Four calls show the whole system. There is no inbound phone number yet, so every call starts from **Vaani > Agents > aangan-test >
+Start Test > Audio**, which rings the tester's own phone. Wait about two minutes after each call, then look in three places:
+the **dashboard** (the Vercel link), **HubSpot > Deals** (pipeline "Aangan Enquiries"), and the **designer's inbox**.
+
+Before you start: the designer must be on duty (`designers.on_duty`), and the every-minute `aangan-tick` job must be running.
+Calls made outside 10:00-19:00 IST are held and their email is sent at 10:00 IST, which is the after-hours rule working, not a fault.
+
+### 1. Happy path (run live: passed)
+
+Say: "I want interior design for my 3BHK in Baner, about 1,150 sq ft, whole home. I'm the owner and I'd like it done by March."
+
+- Agent: asks one question at a time, repeats the size back, summarises, says a designer will call during working hours.
+- Result: a **qualified** lead and a HubSpot deal in New (qualified), marked as an estimate (Rs 11 lakh). Then the designer email with a claim link.
+- Claim it: the first click wins, sets the deal owner in HubSpot and moves it to Claimed. Left alone for 15 working minutes, it is auto-assigned (run live: passed).
+
+### 2. Price pressure (run live: passed)
+
+Give normal details (for example Wakad, 900 sq ft), then ask "How much will it cost?" twice.
+
+- Agent: gives a reason ("it varies a lot with the site and the materials") and offers the free, no-obligation consultation. It never says a number.
+- Result: a qualified lead with the flag `price_asked`. The transcript contains no figure.
+
+### 3. Out-of-area decline (verified in the replay, not yet run live)
+
+Say: "I'm in Nashik" (anywhere outside Pune and PCMC).
+
+- Agent: a kind decline with the reason and the door left open.
+- Result: **declined, out of area**, with its transcript in the review queue for Nikhil. No designer email.
+
+### 4. Complaint (verified in the replay, not yet run live)
+
+Say: "My designer hasn't replied in five days."
+
+- Agent: one apology, takes name, project area and designer, and says a senior person will call back within fifteen minutes.
+- Result: an **escalation**, never treated as a new enquiry. Nikhil is emailed at once.
+
+### Without a phone
+
+`npm run replay` runs the 20 labelled historical calls (10 used as prompt examples, 10 held out) through the pipeline and prints the match rate.
+These are historical, human-handled enquiries, so they are kept out of the live metrics and out of HubSpot.
+`npm run replay -- --extractor=gemini` measures Gemini's real accuracy (last run: 20/20, 10/10 on the held-out half).
+
+### What is not part of the demo yet
+
+The Phase 4 console (declined-review queue, sync health, designer on-duty toggle) is not built. Gemini is on the free tier and Resend uses its
+test sender, so use test data only until both are upgraded.
