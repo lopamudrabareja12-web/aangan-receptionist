@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Decision } from "@/lib/domain";
 import type { CallCost } from "./costs";
-import type { Assignment, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, ReinstateCandidate, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 // Production store. NOTE: typechecked and written against the schema in supabase/migrations, but only exercised
 // against a real Supabase project at the smoke test (the in-memory store covers all pipeline logic in tests).
@@ -159,6 +159,27 @@ export class SupabaseStore implements PipelineStore {
 
   async setLeadHubspotIds(leadId: string, ids: { contactId: string | null; dealId: string | null }) {
     must(await this.db.from("leads").update({ hubspot_contact_id: ids.contactId, hubspot_deal_id: ids.dealId }).eq("id", leadId), "save hubspot ids");
+  }
+
+  async getLeadForReinstate(leadId: string): Promise<ReinstateCandidate | null> {
+    const r = must(
+      await this.db.from("leads").select("id, call_id, decision, name, phone, flags, extraction, hubspot_deal_id, superseded_by_call_id, calls!call_id(started_at)").eq("id", leadId).maybeSingle(),
+      "read lead for reinstate",
+    ) as (Record<string, unknown> & { calls: { started_at: string } | null }) | null;
+    if (!r) return null;
+    return {
+      id: r.id as string, callId: r.call_id as string, decision: r.decision as Decision, name: (r.name as string) ?? null, phone: (r.phone as string) ?? null,
+      flags: (r.flags as string[]) ?? [], extraction: r.extraction ?? null, hubspotDealId: (r.hubspot_deal_id as string) ?? null,
+      startedAt: new Date(r.calls?.started_at ?? 0), supersededByCallId: (r.superseded_by_call_id as string) ?? null,
+    };
+  }
+
+  async markReinstated(leadId: string, flags: string[]) {
+    const got = must(
+      await this.db.from("leads").update({ decision: "qualified_flagged", flags }).eq("id", leadId).eq("decision", "declined").select("id"),
+      "reinstate lead",
+    ) as unknown[];
+    return got.length === 1;
   }
 
   async logSync(e: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }) {

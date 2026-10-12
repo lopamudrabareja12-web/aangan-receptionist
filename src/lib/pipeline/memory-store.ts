@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CallCost } from "./costs";
 import { DEFAULT_RATES } from "./costs";
-import type { Assignment, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
+import type { Assignment, ReinstateCandidate, CallRecord, Designer, VaaniCallMeta, LeadRecord, NewLead, OutboxRow, PipelineStore, RecentCall, Settings } from "./store";
 
 /** In-memory PipelineStore for tests and the Replay Lab. Nothing here touches Supabase or HubSpot. */
 export class MemoryStore implements PipelineStore {
@@ -102,6 +102,23 @@ export class MemoryStore implements PipelineStore {
       l.hubspotContactId = ids.contactId;
       l.hubspotDealId = ids.dealId;
     }
+  }
+
+  async getLeadForReinstate(leadId: string): Promise<ReinstateCandidate | null> {
+    const l = this.leads.get(leadId);
+    if (!l) return null;
+    return {
+      id: l.id, callId: l.callId, decision: l.decision, name: l.name, phone: l.phone, flags: l.flags, extraction: l.raw.extraction,
+      hubspotDealId: l.hubspotDealId, startedAt: this.calls.get(l.callId)?.startedAt ?? new Date(0), supersededByCallId: l.supersededByCallId,
+    };
+  }
+
+  async markReinstated(leadId: string, flags: string[]) {
+    const l = this.leads.get(leadId);
+    if (!l || l.decision !== "declined") return false;
+    l.decision = "qualified_flagged";
+    l.flags = flags;
+    return true;
   }
 
   async logSync(e: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }) {

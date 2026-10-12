@@ -172,3 +172,9 @@ Lopa confirmed "forward soft fails with a flag", but Nikhil's rubric (qualified.
 - Confirm voice platform (VaaniYantra vs other) and where the phone number comes from; Marathi unsupported/unknown.
 - Resend free tier may only send to verified addresses/domain; fine for demo with test addresses.
 - Confirm the Cut (pricing quote).
+
+## Phase 4 console (built 12 Oct 2026)
+- Private console under `/console` (sign-in `/login`, `DASHBOARD_PASSWORD`; fails closed if unset). Pages: overview (live only, HubSpot funnel), declined review + reinstate (new outbox op `reinstate_deal`), sync health + retry, costs + break-even + editable rates, designers on-duty toggle, Replay Lab. `/calls/:id` redirects to `/console/calls/:id`.
+- Auth is checked in `src/proxy.ts`, the console layout, and inside every query/action (a layout redirect does not stop a page rendering). Live-data queries call `connection()` so Cache Components does not freeze the clock.
+- Supabase embeds from leads to calls need the hint `calls!call_id` (leads has two foreign keys to calls). Caught only by running against the real database; in-memory tests cannot see it.
+- Remaining: the HubSpot reports click-by-click guide; the Automation Brief and Nine Checks are written (docs/). Reinstate and retry were tested against the mock HubSpot and the real read path, not yet clicked on live data (no live declined lead exists).

@@ -100,6 +100,37 @@ export async function moveDealStage(
   await c.request("PATCH", `${PATHS.deals}/${dealId}`, { properties: { dealstage: stageId } });
 }
 
+export async function updateDealProperties(c: HubSpotClient, dealId: string, properties: Record<string, string | number>): Promise<void> {
+  await c.request("PATCH", `${PATHS.deals}/${dealId}`, { properties });
+}
+
+export interface PipelineDeal {
+  id: string;
+  name: string;
+  stageId: string;
+  ownerId: string | null;
+  amount: number | null;
+}
+
+/** Deals in one pipeline (up to `max`), for the console's stage funnel. HubSpot stays the source of truth for stage and owner. */
+export async function listPipelineDeals(c: HubSpotClient, pipelineId: string, max = 500): Promise<PipelineDeal[]> {
+  const out: PipelineDeal[] = [];
+  let after: string | undefined;
+  do {
+    const page: SearchResult = await c.request<SearchResult>("POST", PATHS.dealsSearch, {
+      filterGroups: [{ filters: [{ propertyName: "pipeline", operator: "EQ", value: pipelineId }] }],
+      properties: ["dealname", "dealstage", "hubspot_owner_id", "amount"],
+      limit: 100,
+      ...(after ? { after } : {}),
+    });
+    for (const r of page.results) {
+      out.push({ id: r.id, name: r.properties.dealname ?? "", stageId: r.properties.dealstage ?? "", ownerId: r.properties.hubspot_owner_id || null, amount: r.properties.amount ? Number(r.properties.amount) : null });
+    }
+    after = page.paging?.next?.after;
+  } while (after && out.length < max);
+  return out;
+}
+
 export interface Owner {
   id: string;
   email: string;

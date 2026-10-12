@@ -24,6 +24,7 @@ const FLAG_TEXT: Record<string, string> = {
   vip: "VIP referral (friend/associate of Nikhil)",
   price_asked: "Caller asked about price; the standard deflection was used and no number was given",
   complaint: "Existing-client complaint",
+  reinstated: "Reinstated by Nikhil after review (first declined by the system)",
   follow_up_failure: "Earlier enquiry was not followed up",
 };
 

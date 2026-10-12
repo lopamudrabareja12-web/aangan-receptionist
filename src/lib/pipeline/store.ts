@@ -105,6 +105,19 @@ export interface RecentCall {
   supersededByCallId: string | null;
 }
 
+export interface ReinstateCandidate {
+  id: string;
+  callId: string;
+  decision: Decision;
+  name: string | null;
+  phone: string | null;
+  flags: string[];
+  extraction: unknown; // de-identified model output as stored; null when the AI step was skipped
+  hubspotDealId: string | null;
+  startedAt: Date;
+  supersededByCallId: string | null;
+}
+
 /** Everything the pipeline needs from storage. Implemented in memory (tests, Replay Lab) and on Supabase (production). */
 export interface PipelineStore {
   getSettings(): Promise<Settings>;
@@ -141,5 +154,9 @@ export interface PipelineStore {
   listEvents(leadId: string, eventType: string): Promise<{ detail: unknown }[]>;
   /** Calls stuck in received/processing/failed for longer than `olderThan`, oldest first. */
   listStaleCalls(olderThan: Date, limit: number): Promise<CallRecord[]>;
+  // --- Phase 4: console ---
+  getLeadForReinstate(leadId: string): Promise<ReinstateCandidate | null>;
+  /** Atomic: only a lead still in "declined" changes. Returns true if THIS call reinstated it. */
+  markReinstated(leadId: string, flags: string[]): Promise<boolean>;
   logSync(entry: { outboxId: string | null; leadId: string | null; operation: string; ok: boolean; httpStatus?: number; detail?: unknown }): Promise<void>;
 }

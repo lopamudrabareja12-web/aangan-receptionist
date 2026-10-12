@@ -6,6 +6,7 @@ import { buildDealProperties, stageForDecision, type DealInput } from "@/lib/hub
 import { PIPELINE_LABEL } from "@/lib/hubspot/stages";
 import { normalizePhone } from "@/lib/phone";
 import { applyClaim, type ClaimPayload } from "./claim-deal";
+import { applyReinstate, type ReinstatePayload } from "./reinstate-deal";
 import type { OutboxRow, PipelineStore } from "./store";
 
 export interface SyncProgress {
@@ -84,7 +85,7 @@ export async function runOutbox(deps: { store: PipelineStore; client: HubSpotCli
   return out;
 
   async function processRow(row: OutboxRow) {
-    const payload = row.payload as SyncPayload | ClaimPayload;
+    const payload = row.payload as SyncPayload | ClaimPayload | ReinstatePayload;
     const leadId = payload.leadId;
     try {
       let detail: Record<string, unknown>;
@@ -96,6 +97,14 @@ export async function runOutbox(deps: { store: PipelineStore; client: HubSpotCli
         });
         detail = { dealId: p.dealId, ownerId: p.ownerId, via: p.via };
         await store.addEvent(leadId, "hubspot_owner_set", detail);
+      } else if (row.operation === "reinstate_deal") {
+        const p = payload as ReinstatePayload;
+        await applyReinstate(client, p, async (progress) => {
+          p.progress = progress;
+          await store.updateOutboxPayload(row.id, p);
+        });
+        detail = { dealId: p.dealId };
+        await store.addEvent(leadId, "hubspot_reinstated", detail);
       } else {
         const p = payload as SyncPayload;
         const progress = await syncLead(client, p, async (pr) => {

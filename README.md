@@ -106,7 +106,7 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
 2. A. HubSpot foundation: slim schema, HubSpot client, setup script, deal mapping (done; real-portal smoke test pending)
    B. Pipeline: webhook, extraction, deterministic rubric, Replay Lab (built; Gemini and Supabase untested live)
 3. Notify and claim: email via Resend, first-claim-wins link, owner written to HubSpot, 15-minute auto-assign, every-minute job (built and tested live)
-4. Thin console + manual HubSpot report guide
+4. Thin console (built: sign-in, live overview, declined review with reinstate, sync health, costs and break-even, designers, Replay Lab); the HubSpot report guide is still to write
 5. Voice agent pack for Vaani (built: `voice-agent/`; follow `voice-agent/SETUP.md`)
 6. Deploy and end-to-end demo (deployed on Vercel; see "How to demo" below)
 
@@ -122,6 +122,19 @@ Only `--extractor=gemini` does. A page for the Replay Lab arrives with the conso
   pushes queued writes to HubSpot, sends due emails, auto-assigns. To stop it: `select cron.unschedule('aangan-tick');`
 - `npm run designers:sync -- --apply` links real HubSpot users as designers. `npm run phase3:smoke` and `npm run email:test` are live tests.
 - Email uses Resend's test sender, which only delivers to the Resend account's own address. A real rollout needs a verified domain.
+
+## Console (Phase 4)
+
+Sign in at `/login` with `DASHBOARD_PASSWORD` (set it in `.env.local` and in Vercel; with no password set, nobody gets in). The public page `/` stays
+the historical-replay dashboard; the console shows **live calls only** and is private because it holds caller details.
+
+- **Overview:** calls, after-hours share, outcomes, estimated pipeline (labelled estimate), and the pipeline by stage read from HubSpot.
+- **Declined review:** every automatic decline with its reason and transcript. **Reinstate** flips the lead once, queues the HubSpot move back to
+  New (qualified) with the estimate and a note, and emails the designers like any other lead.
+- **Sync health:** queued HubSpot writes, dead ones with the error and a Retry button, calls that did not finish, and the latest writes.
+- **Costs:** per call, per forwarded lead, break-even (extra projects a year, and extra leads at an editable conversion rate), and editable rates. All estimates.
+- **Designers:** the on-duty toggle. **Replay Lab:** the 20 historical calls and the safety checks.
+- Emails link to `/calls/<id>`, which redirects to the signed-in transcript page. Access is checked three times: a proxy before anything renders, the layout, and every data read and action.
 
 ## Voice agent pack (Phase 5)
 
